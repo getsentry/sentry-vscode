@@ -5,9 +5,18 @@ import { SentryCommand } from './base';
 import { showIssueResults } from './showIssueResults';
 
 export const COMMAND = 'sentry.showIssueSearch';
+const DEFAULT_QUERY = 'is:unresolved ';
 
 export interface ShowIssueSearchArgs {
   search?: string;
+}
+
+function getValueSelection(query: string): [number, number] {
+  if (query.startsWith(DEFAULT_QUERY)) {
+    return [DEFAULT_QUERY.length, query.length];
+  } else {
+    return [0, query.length];
+  }
 }
 
 export class ShowIssueSearchCommand extends SentryCommand<ShowIssueSearchArgs> {
@@ -16,11 +25,16 @@ export class ShowIssueSearchCommand extends SentryCommand<ShowIssueSearchArgs> {
   }
 
   protected async run(args: ShowIssueSearchArgs = {}): Promise<void> {
+    // TODO: Perform auto-complete with a dynamic QuickPick instead.
+    const initialQuery = args.search || DEFAULT_QUERY;
+    const selection = getValueSelection(initialQuery);
+
     const query = await window.showInputBox({
       placeHolder:
         'search by issue id, message, tags, status, or tag or paste an issue link',
       prompt: 'Please search for an issue',
-      value: args.search,
+      value: initialQuery,
+      valueSelection: selection,
     });
 
     if (!query) {
