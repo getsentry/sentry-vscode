@@ -15,20 +15,6 @@
     ],
     "main": "./out/extension",
     "contributes": {
-        "configuration": {
-            "type": "object",
-            "title": "Sentry extension configuration",
-            "properties": {
-                "sentry.enabled": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Enables or disables all Sentry functionality."
-                }
-            }
-        },
-        "configurationDefaults": {
-
-        },
         "commands": [
             {
                 "command": "sentry.showIssueSearch",
@@ -39,6 +25,29 @@
                 "command": "sentry.startDebugger",
                 "title": "Start Debugger",
                 "category": "Sentry"
+            }
+        ],
+        "debuggers": [
+            {
+                "type": "sentry",
+                "label": "Sentry Virtual Debugger",
+                "program": "./out/debugger.js",
+                "runtime": "node",
+                "configurationAttributes": {
+                    "launch": {
+                        "required": [
+                            "event"
+                        ],
+                        "properties": {
+                            "program": {
+                                "type": "Event",
+                                "description": "Sentry event as JSON"
+                            }
+                        }
+                    }
+                },
+                "initialConfigurations": [],
+                "configurationSnippets": []
             }
         ],
         "menus": {
@@ -81,12 +90,15 @@
         "test": "npm run compile && node ./node_modules/vscode/bin/test"
     },
     "devDependencies": {
-        "@sentry/types": "^4.0.0-beta.12",
         "@sentry/typescript": "^4.0.0-beta.12",
-        "@types/mocha": "^2.2.42",
-        "@types/node": "^7.0.43",
-        "tslint": "^5.8.0",
         "typescript": "^2.6.1",
-        "vscode": "^1.1.6"
+        "vscode": "^1.1.6",
+        "tslint": "^5.8.0",
+        "@types/node": "^7.0.43",
+        "@types/mocha": "^2.2.42"
+    },
+    "dependencies": {
+        "vscode-debugadapter": "1.27.0",
+        "vscode-debugprotocol": "1.27.0"
     }
 }
