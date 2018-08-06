@@ -1,6 +1,7 @@
 import { debug, ExtensionContext, workspace } from 'vscode';
 import { configureCommands, SentryContext, setContext } from './commands';
 import { SentryConfigurationProvider } from './debugger';
+import { configureSentry } from './sentry';
 
 export function activate(context: ExtensionContext): void {
   const enabled = workspace
@@ -13,6 +14,7 @@ export function activate(context: ExtensionContext): void {
 
   setContext(SentryContext.Enabled, enabled);
   configureCommands(context);
+  configureSentry();
 
   // register a configuration provider for 'mock' debug type
   const provider = new SentryConfigurationProvider();

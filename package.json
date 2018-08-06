@@ -15,6 +15,17 @@
     ],
     "main": "./out/extension",
     "contributes": {
+        "configuration": {
+            "type": "object",
+            "title": "Sentry extension configuration",
+            "properties": {
+                "sentry.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enables or disables all Sentry functionality."
+                }
+            }
+        },
         "commands": [
             {
                 "command": "sentry.showIssueSearch",
@@ -99,6 +110,7 @@
     },
     "dependencies": {
         "vscode-debugadapter": "1.27.0",
-        "vscode-debugprotocol": "1.27.0"
+        "vscode-debugprotocol": "1.27.0",
+        "request-light": "^0.2.3"
     }
 }
