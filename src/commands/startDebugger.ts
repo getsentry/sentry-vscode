@@ -17,6 +17,7 @@ export class StartDebuggerCommand extends SentryCommand<StartDebuggerArgs> {
 
   protected async run(args: StartDebuggerArgs): Promise<void> {
     try {
+      // TODO: Show loading indicator and allow cancellation
       const event = await loadLatestEvent(args.issue);
       await startDebugging(event);
     } catch (e) {

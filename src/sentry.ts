@@ -41,25 +41,13 @@ async function get<T>(url: string): Promise<T> {
   return JSON.parse(response.responseText);
 }
 
-export async function searchIssues(_input: string): Promise<Issue[]> {
-  return [
-    {
-      id: 'a',
-      title: 'First',
-    },
-    {
-      id: 'b',
-      title: 'Second',
-    },
-    {
-      id: 'c',
-      title: 'Third',
-    },
-  ];
+export async function searchIssues(input: string): Promise<Issue[]> {
+  const baseUrl = '/api/0/projects/sentry/sentry/issues/';
+  const url = `${baseUrl}?query=${encodeURIComponent(input)}`;
+  return get<Issue[]>(url);
 }
 
-export async function loadLatestEvent(_issue: Issue): Promise<Event> {
-  return {
-    event_id: 'asdf',
-  };
+export async function loadLatestEvent(issue: Issue): Promise<Event> {
+  const url = `/api/0/issues/${issue.id}/events/latest/`;
+  return get<Event>(url);
 }

@@ -30,6 +30,7 @@ export class ShowIssueSearchCommand extends SentryCommand<ShowIssueSearchArgs> {
     }
 
     try {
+      // TODO: Show loading indicator and allow cancellation
       const issues = await searchIssues(query);
       if (issues.length === 0) {
         window.showInformationMessage('Sorry, no issues match your query.');
