@@ -39,7 +39,7 @@ export class SentryDebugSession extends LoggingDebugSession {
    */
   protected initializeRequest(
     response: DebugProtocol.InitializeResponse,
-    args: DebugProtocol.InitializeRequestArguments,
+    _args: DebugProtocol.InitializeRequestArguments,
   ): void {
     console.info('initialize request');
     // build and return the capabilities of this debug adapter:
@@ -73,7 +73,7 @@ export class SentryDebugSession extends LoggingDebugSession {
 
   protected async launchRequest(
     response: DebugProtocol.LaunchResponse,
-    args: LaunchRequestArguments,
+    _args: LaunchRequestArguments,
   ): Promise<void> {
     // make sure to 'Stop' the buffered logging if 'trace' is not set
     console.info('launch request');
@@ -92,7 +92,7 @@ export class SentryDebugSession extends LoggingDebugSession {
 
   protected stackTraceRequest(
     response: DebugProtocol.StackTraceResponse,
-    args: DebugProtocol.StackTraceArguments,
+    _args: DebugProtocol.StackTraceArguments,
   ): void {
     console.info('stack trace request');
     response.body = {
@@ -133,7 +133,7 @@ export class SentryDebugSession extends LoggingDebugSession {
 
   protected variablesRequest(
     response: DebugProtocol.VariablesResponse,
-    args: DebugProtocol.VariablesArguments,
+    _args: DebugProtocol.VariablesArguments,
   ): void {
     console.info('variables request');
     const variables = new Array<DebugProtocol.Variable>();

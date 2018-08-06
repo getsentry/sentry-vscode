@@ -25,9 +25,9 @@ export class SentryConfigurationProvider implements DebugConfigurationProvider {
    * e.g. add all missing attributes to the debug configuration.
    */
   public resolveDebugConfiguration(
-    folder: WorkspaceFolder | undefined,
+    _folder: WorkspaceFolder | undefined,
     config: DebugConfiguration,
-    token?: CancellationToken,
+    _token?: CancellationToken,
   ): ProviderResult<DebugConfiguration> {
     return config;
   }
