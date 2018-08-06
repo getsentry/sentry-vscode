@@ -1,3 +1,8 @@
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { promisify } from 'util';
+
 import {
   CancellationToken,
   debug,
@@ -12,13 +17,32 @@ import * as Net from 'net';
 import { Event } from '../sentry';
 import { SentryDebugSession } from './server';
 
-export function startDebugging(event: Event): Thenable<boolean> {
-  return debug.startDebugging(undefined, {
-    event,
-    name: 'View',
-    request: 'launch',
-    type: 'sentry',
-  });
+const unlink = promisify(fs.unlink);
+const writeFile = promisify(fs.writeFile);
+
+async function createTempFile(contents: string): Promise<string> {
+  const random = Math.random()
+    .toString()
+    .substr(2);
+
+  const filePath = path.join(os.tmpdir(), `${random}.json`);
+  await writeFile(filePath, contents);
+  return filePath;
+}
+
+export async function startDebugging(event: Event): Promise<boolean> {
+  const tempFile = createTempFile(JSON.stringify(event));
+
+  try {
+    return debug.startDebugging(undefined, {
+      event: tempFile,
+      name: 'View',
+      request: 'launch',
+      type: 'sentry',
+    });
+  } finally {
+    await unlink(tempFile);
+  }
 }
 
 /*

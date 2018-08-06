@@ -1,3 +1,5 @@
+import promisify = require('util.promisify');
+
 import { ExtensionContext, workspace } from 'vscode';
 import { configureCommands, SentryContext, setContext } from './commands';
 import { configureDebugger } from './debugger';

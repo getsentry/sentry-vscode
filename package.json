@@ -87,15 +87,17 @@
     },
     "devDependencies": {
         "@sentry/typescript": "^4.0.0-beta.12",
-        "typescript": "^2.6.1",
-        "vscode": "^1.1.6",
-        "tslint": "^5.8.0",
+        "@types/mocha": "^2.2.42",
         "@types/node": "^7.0.43",
-        "@types/mocha": "^2.2.42"
+        "@types/util.promisify": "^1.0.0",
+        "tslint": "^5.8.0",
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.6"
     },
     "dependencies": {
+        "request-light": "^0.2.3",
+        "util.promisify": "^1.0.0",
         "vscode-debugadapter": "1.27.0",
-        "vscode-debugprotocol": "1.27.0",
-        "request-light": "^0.2.3"
+        "vscode-debugprotocol": "1.27.0"
     }
 }
