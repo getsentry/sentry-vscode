@@ -1,11 +1,12 @@
 {
   "extends": "./node_modules/@sentry/typescript/tsconfig.json",
   "compilerOptions": {
+    "declaration": false,
     "target": "es6",
     "outDir": "out",
     "lib": ["es6"],
-    "sourceMap": true,
     "rootDir": "src"
   },
+  "include": ["src/**/*"],
   "exclude": ["node_modules", ".vscode-test"]
 }
