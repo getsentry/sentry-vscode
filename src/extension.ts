@@ -1,4 +1,4 @@
-import { ExtensionContext, window, workspace } from 'vscode';
+import { ExtensionContext, workspace } from 'vscode';
 import { configureCommands, SentryContext, setContext } from './commands';
 
 export function activate(context: ExtensionContext): void {
