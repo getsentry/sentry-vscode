@@ -1,15 +1,28 @@
+import { window } from 'vscode';
+
 import { startDebugging } from '../debugger';
+import { loadLatestEvent } from '../issues';
+import { Issue } from '../sentry';
 import { SentryCommand } from './base';
 
 export const COMMAND = 'sentry.startDebugger';
 
-export class StartDebuggerCommand extends SentryCommand<void> {
+export interface StartDebuggerArgs {
+  issue: Issue;
+}
+
+export class StartDebuggerCommand extends SentryCommand<StartDebuggerArgs> {
   public constructor() {
     super(COMMAND);
   }
 
-  protected async run(_args: void): Promise<void> {
-    startDebugging({ event_id: 'asdf' });
+  protected async run(args: StartDebuggerArgs): Promise<void> {
+    try {
+      const event = await loadLatestEvent(args.issue);
+      await startDebugging(event);
+    } catch (e) {
+      window.showErrorMessage(`Could not start debugger: ${e}`);
+    }
   }
 }
 

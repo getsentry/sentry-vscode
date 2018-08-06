@@ -1,7 +1,7 @@
 import { window } from 'vscode';
 
-import { Issue } from '../issues';
 import { CommandQuickPickItem } from '../pick';
+import { Issue } from '../sentry';
 import { SentryCommand } from './base';
 import { showIssueActions } from './showIssueActions';
 

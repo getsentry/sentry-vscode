@@ -1,7 +1,7 @@
 import { window } from 'vscode';
 
-import { Issue } from '../issues';
 import { CommandQuickPickItem } from '../pick';
+import { Issue } from '../sentry';
 import { SentryCommand } from './base';
 import { startDebugger } from './startDebugger';
 
@@ -18,12 +18,12 @@ export class ShowIssueActionsCommand extends SentryCommand<
     super(COMMAND);
   }
 
-  protected async run(_args: ShowIssueActionsArgs): Promise<void> {
+  protected async run(args: ShowIssueActionsArgs): Promise<void> {
     const cmds = [
       CommandQuickPickItem.from(
         { label: 'Launch debugger on Issue' },
         startDebugger,
-        undefined, // TODO: pass the issue
+        { issue: args.issue },
       ),
     ];
 

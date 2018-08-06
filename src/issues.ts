@@ -1,8 +1,4 @@
-export interface Issue {
-  // TODO:
-  id: string;
-  title: string;
-}
+import { Event, Issue } from './sentry';
 
 export async function searchIssues(_input: string): Promise<Issue[]> {
   return [
@@ -19,4 +15,10 @@ export async function searchIssues(_input: string): Promise<Issue[]> {
       title: 'Third',
     },
   ];
+}
+
+export async function loadLatestEvent(_issue: Issue): Promise<Event> {
+  return {
+    event_id: 'asdf',
+  };
 }
