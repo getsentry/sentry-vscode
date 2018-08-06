@@ -1,6 +1,6 @@
 import { window } from 'vscode';
 
-import { searchIssues } from '../issues';
+import { searchIssues } from '../sentry';
 import { SentryCommand } from './base';
 import { showIssueResults } from './showIssueResults';
 

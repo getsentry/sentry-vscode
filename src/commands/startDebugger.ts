@@ -1,8 +1,7 @@
 import { window } from 'vscode';
 
 import { startDebugging } from '../debugger';
-import { loadLatestEvent } from '../issues';
-import { Issue } from '../sentry';
+import { Issue, loadLatestEvent } from '../sentry';
 import { SentryCommand } from './base';
 
 export const COMMAND = 'sentry.startDebugger';
