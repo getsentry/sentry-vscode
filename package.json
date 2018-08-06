@@ -11,16 +11,32 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.sayHello"
+        "*"
     ],
     "main": "./out/extension",
     "contributes": {
+        "commands": [
+            {
+                "command": "sentry.showIssueSearch",
+                "title": "Search Issues",
+                "category": "Sentry"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "sentry.showIssueSearch",
+                    "when": "sentry:enabled"
+                }
+            ]
+        },
         "viewsContainers": {
             "activitybar": [
                 {
                     "id": "sentry",
                     "title": "Sentry",
-                    "icon": "resources/sentry-glyph.svg"
+                    "icon": "resources/sentry-glyph.svg",
+                    "when": "sentry:enabled"
                 }
             ]
         },
@@ -28,7 +44,8 @@
             "sentry": [
                 {
                     "id": "sentry-issues",
-                    "name": "Issues"
+                    "name": "Issues",
+                    "when": "sentry:enabled"
                 }
             ]
         }
