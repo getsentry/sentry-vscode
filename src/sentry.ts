@@ -5,7 +5,13 @@ import { getServerUrl, getToken } from './config';
 
 export interface Issue {
   id: string;
+  shortId: string;
+  culprit: string;
   title: string;
+  metadata: {
+    type: string;
+    value: string;
+  };
 }
 
 export interface Event {

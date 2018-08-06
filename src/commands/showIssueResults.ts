@@ -12,7 +12,11 @@ export interface ShowIssueResultsArgs {
 }
 
 function makeIssueItem(issue: Issue): CommandQuickPickItem {
-  const item = { label: issue.title };
+  const item = {
+    description: issue.culprit,
+    detail: issue.metadata.value,
+    label: `${issue.shortId}: ${issue.metadata.type}`,
+  };
   return CommandQuickPickItem.from(item, showIssueActions, { issue });
 }
 
