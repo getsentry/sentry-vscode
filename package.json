@@ -15,12 +15,23 @@
     ],
     "main": "./out/extension",
     "contributes": {
-        "commands": [
-            {
-                "command": "extension.sayHello",
-                "title": "Hello World"
-            }
-        ]
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "sentry",
+                    "title": "Sentry",
+                    "icon": "resources/sentry-glyph.svg"
+                }
+            ]
+        },
+        "views": {
+            "sentry": [
+                {
+                    "id": "sentry-issues",
+                    "name": "Issues"
+                }
+            ]
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
