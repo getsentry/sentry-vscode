@@ -42,23 +42,8 @@
             {
                 "type": "sentry",
                 "label": "Sentry Virtual Debugger",
-                "program": "./out/debugger.js",
-                "runtime": "node",
-                "configurationAttributes": {
-                    "launch": {
-                        "required": [
-                            "event"
-                        ],
-                        "properties": {
-                            "program": {
-                                "type": "Event",
-                                "description": "Sentry event as JSON"
-                            }
-                        }
-                    }
-                },
-                "initialConfigurations": [],
-                "configurationSnippets": []
+                "program": "./out/debugger/launcher.js",
+                "runtime": "node"
             }
         ],
         "menus": {

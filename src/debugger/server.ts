@@ -1,97 +1,21 @@
-import {
-  CancellationToken,
-  debug,
-  DebugConfiguration,
-  DebugConfigurationProvider,
-  ProviderResult,
-  window,
-  WorkspaceFolder,
-} from 'vscode';
-
-import * as Net from 'net';
 import { basename } from 'path';
 import {
   Handles,
   InitializedEvent,
-  logger,
   Logger,
+  logger,
   LoggingDebugSession,
   Scope,
   Source,
   StackFrame,
-} from 'vscode-debugadapter';
-import { DebugProtocol } from 'vscode-debugprotocol';
-import { Event } from './sentry';
+  StoppedEvent,
+  Thread,
+} from 'vscode-debugadapter/lib/main';
+import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 
-export function startDebugging(event: Event): Thenable<boolean> {
-  return debug.startDebugging(undefined, {
-    event,
-    name: 'View',
-    request: 'launch',
-    type: 'sentry',
-  });
-}
+// tslint:disable-next-line:no-empty-interface
+interface LaunchRequestArguments {}
 
-/*
- * Set the following compile time flag to true if the
- * debug adapter should run inside the extension host.
- * Please note: the test suite does no longer work in this mode.
- */
-const EMBED_DEBUG_ADAPTER = true;
-
-export class SentryConfigurationProvider implements DebugConfigurationProvider {
-  private _server?: Net.Server;
-
-  /**
-   * Massage a debug configuration just before a debug session is being launched,
-   * e.g. add all missing attributes to the debug configuration.
-   */
-  public resolveDebugConfiguration(
-    folder: WorkspaceFolder | undefined,
-    config: DebugConfiguration,
-    token?: CancellationToken,
-  ): ProviderResult<DebugConfiguration> {
-    if (!config.event) {
-      return window
-        .showInformationMessage('Cannot find a program to debug')
-        .then(_ => undefined);
-    }
-
-    if (EMBED_DEBUG_ADAPTER) {
-      // start port listener on launch of first debug session
-      if (!this._server) {
-        // start listening on a random port
-        this._server = Net.createServer(socket => {
-          const session = new SentryDebugSession();
-          session.setRunAsServer(true);
-          session.start(socket as NodeJS.ReadableStream, socket);
-        }).listen(0);
-      }
-
-      // make VS Code connect to debug server instead of launching debug adapter
-      config.debugServer = this._server.address().port;
-    }
-
-    return config;
-  }
-
-  public dispose(): void {
-    return;
-  }
-}
-
-/**
- * This interface describes the mock-debug specific launch attributes
- * (which are not part of the Debug Adapter Protocol).
- * The schema for these attributes lives in the package.json of the mock-debug extension.
- * The interface should always match this schema.
- */
-interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
-  /** Event to debug. */
-  event: Event;
-}
-
-// tslint:disable-next-line:max-classes-per-file
 export class SentryDebugSession extends LoggingDebugSession {
   private _variableHandles: Handles<string> = new Handles<string>();
 
@@ -117,6 +41,7 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.InitializeResponse,
     args: DebugProtocol.InitializeRequestArguments,
   ): void {
+    console.info('initialize request');
     // build and return the capabilities of this debug adapter:
     response.body = response.body || {};
 
@@ -133,6 +58,19 @@ export class SentryDebugSession extends LoggingDebugSession {
     this.sendEvent(new InitializedEvent());
   }
 
+  /**
+   * Called at the end of the configuration sequence.
+   * Indicates that all breakpoints etc. have been sent to the DA and that the 'launch' can start.
+   */
+  protected configurationDoneRequest(
+    response: DebugProtocol.ConfigurationDoneResponse,
+    args: DebugProtocol.ConfigurationDoneArguments,
+  ): void {
+    super.configurationDoneRequest(response, args);
+
+    this.sendEvent(new StoppedEvent('exception', 1));
+  }
+
   protected async launchRequest(
     response: DebugProtocol.LaunchResponse,
     args: LaunchRequestArguments,
@@ -141,6 +79,14 @@ export class SentryDebugSession extends LoggingDebugSession {
     console.info('launch request');
     logger.setup(Logger.LogLevel.Verbose, false);
 
+    this.sendResponse(response);
+  }
+
+  protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
+    console.info('threads request');
+    response.body = {
+      threads: [new Thread(1, 'fake thread')],
+    };
     this.sendResponse(response);
   }
 
@@ -153,7 +99,7 @@ export class SentryDebugSession extends LoggingDebugSession {
       stackFrames: [
         new StackFrame(
           0,
-          'foo',
+          'foo.rs',
           this.createSource('/Users/untitaker/foo.rs'),
           2,
           0,
@@ -168,6 +114,7 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.ScopesResponse,
     args: DebugProtocol.ScopesArguments,
   ): void {
+    console.info('scopes request');
     const frameReference = args.frameId;
     const scopes = new Array<Scope>();
     scopes.push(
@@ -188,6 +135,7 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.VariablesResponse,
     args: DebugProtocol.VariablesArguments,
   ): void {
+    console.info('variables request');
     const variables = new Array<DebugProtocol.Variable>();
     variables.push({
       name: 'donko',

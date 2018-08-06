@@ -1,4 +1,4 @@
-import * as request from 'request-light';
+import * as request from 'request-light/lib/main';
 import { workspace } from 'vscode';
 
 import { getServerUrl, getToken } from './config';
