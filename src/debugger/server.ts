@@ -10,8 +10,8 @@ import {
   StackFrame,
   StoppedEvent,
   Thread,
-} from 'vscode-debugadapter/lib/main';
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
+} from 'vscode-debugadapter';
+import { DebugProtocol } from 'vscode-debugprotocol';
 
 // tslint:disable-next-line:no-empty-interface
 interface LaunchRequestArguments {}
