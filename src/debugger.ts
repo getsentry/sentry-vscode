@@ -1,7 +1,7 @@
+import { SentryEvent } from '@sentry/types';
 import { debug } from 'vscode';
 
-import { Event } from './sentry';
-
-export function startDebugging(event: Event): Thenable<boolean> {
+export function startDebugging(event: SentryEvent): Thenable<boolean> {
+  console.info(event);
   return debug.startDebugging(undefined, 'configuration');
 }
