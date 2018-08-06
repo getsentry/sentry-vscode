@@ -1,15 +1,12 @@
-import { commands, ExtensionContext, window } from 'vscode';
+import { commands, ExtensionContext } from 'vscode';
 
-import { startDebugging } from './debugger';
-import { showSearchInput } from './issues';
+import { showIssueActions } from './commands/showIssueActions';
+import { showIssueResults } from './commands/showIssueResults';
+import { showIssueSearch } from './commands/showIssueSearch';
+import { startDebugger } from './commands/startDebugger';
 
 enum VSCodeCommands {
   SetContext = 'setContext',
-}
-
-export enum SentryCommand {
-  ShowIssueSearch = 'sentry.showIssueSearch',
-  StartDebugger = 'sentry.startDebugger',
 }
 
 export enum SentryContext {
@@ -23,24 +20,9 @@ export function setContext(
   return commands.executeCommand(VSCodeCommands.SetContext, key, value);
 }
 
-function showIssueSearch(...args: any[]): void {
-  showSearchInput();
-}
-
-function startDebugger(): void {
-  startDebugging({ event_id: '' });
-}
-
-function registerCommand(
-  context: ExtensionContext,
-  command: SentryCommand | string,
-  callback: (...args: any[]) => any,
-): void {
-  const disposable = commands.registerCommand(command, callback);
-  context.subscriptions.push(disposable);
-}
-
 export function configureCommands(context: ExtensionContext): void {
-  registerCommand(context, SentryCommand.ShowIssueSearch, showIssueSearch);
-  registerCommand(context, SentryCommand.StartDebugger, startDebugger);
+  context.subscriptions.push(showIssueSearch.register());
+  context.subscriptions.push(showIssueResults.register());
+  context.subscriptions.push(showIssueActions.register());
+  context.subscriptions.push(startDebugger.register());
 }
