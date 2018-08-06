@@ -48,8 +48,10 @@ async function get<T>(url: string): Promise<T> {
 }
 
 export async function searchIssues(input: string): Promise<Issue[]> {
+  // TODO: Allow customizing environments
   const baseUrl = '/api/0/projects/sentry/sentry/issues/';
-  const url = `${baseUrl}?query=${encodeURIComponent(input)}`;
+  const params = '&limit=25&sort=date&shortIdLookup=1';
+  const url = `${baseUrl}?query=${encodeURIComponent(input)}${params}`;
   return get<Issue[]>(url);
 }
 
