@@ -1,5 +1,7 @@
 import { commands, ExtensionContext, window } from 'vscode';
 
+import { startDebugging } from './debugger';
+
 enum VSCodeCommands {
   SetContext = 'setContext',
 }
@@ -24,6 +26,10 @@ function showIssueSearch(): void {
   window.showInformationMessage('This would show the issue search box');
 }
 
+function startDebugger(): void {
+  startDebugging({ event_id: '' });
+}
+
 function registerCommand(
   context: ExtensionContext,
   command: SentryCommand | string,
@@ -35,4 +41,5 @@ function registerCommand(
 
 export function configureCommands(context: ExtensionContext): void {
   registerCommand(context, SentryCommand.ShowIssueSearch, showIssueSearch);
+  registerCommand(context, SentryCommand.StartDebugger, startDebugger);
 }

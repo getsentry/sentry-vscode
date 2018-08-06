@@ -20,12 +20,21 @@
                 "command": "sentry.showIssueSearch",
                 "title": "Search Issues",
                 "category": "Sentry"
+            },
+            {
+                "command": "sentry.startDebugger",
+                "title": "Start Debugger",
+                "category": "Sentry"
             }
         ],
         "menus": {
             "commandPalette": [
                 {
                     "command": "sentry.showIssueSearch",
+                    "when": "sentry:enabled"
+                },
+                {
+                    "command": "sentry.startDebugger",
                     "when": "sentry:enabled"
                 }
             ]
