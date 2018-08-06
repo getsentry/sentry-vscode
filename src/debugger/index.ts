@@ -10,10 +10,12 @@ import {
   DebugConfigurationProvider,
   ExtensionContext,
   ProviderResult,
+  window,
   WorkspaceFolder,
 } from 'vscode';
 
 import * as Net from 'net';
+import { createSecureContext } from 'tls';
 import { Event } from '../sentry';
 import { SentryDebugSession } from './server';
 
@@ -31,10 +33,10 @@ async function createTempFile(contents: string): Promise<string> {
 }
 
 export async function startDebugging(event: Event): Promise<boolean> {
-  const tempFile = createTempFile(JSON.stringify(event));
+  const tempFile = await createTempFile(JSON.stringify(event));
 
   try {
-    return debug.startDebugging(undefined, {
+    return await debug.startDebugging(undefined, {
       event: tempFile,
       name: 'View',
       request: 'launch',
@@ -63,6 +65,12 @@ export class SentryConfigurationProvider implements DebugConfigurationProvider {
     config: DebugConfiguration,
     _token?: CancellationToken,
   ): ProviderResult<DebugConfiguration> {
+    if (!config.event) {
+      return window
+        .showInformationMessage('Cannot find a program to debug')
+        .then(_ => undefined); // abort launch
+    }
+
     if (EMBED_DEBUG_ADAPTER) {
       // start port listener on launch of first debug session
       if (!this._server) {

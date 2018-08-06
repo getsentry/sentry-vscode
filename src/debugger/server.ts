@@ -1,4 +1,6 @@
+import * as fs from 'fs';
 import { basename } from 'path';
+import promisify = require('util.promisify');
 import {
   Handles,
   InitializedEvent,
@@ -12,12 +14,17 @@ import {
   Thread,
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
+import { Event } from '../sentry';
 
-// tslint:disable-next-line:no-empty-interface
-interface LaunchRequestArguments {}
+const readFile = promisify(fs.readFile);
+
+interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
+  event: string;
+}
 
 export class SentryDebugSession extends LoggingDebugSession {
   private _variableHandles: Handles<string> = new Handles<string>();
+  private event!: Event;
 
   /**
    * Creates a new debug adapter that is used for one debug session.
@@ -41,7 +48,6 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.InitializeResponse,
     _args: DebugProtocol.InitializeRequestArguments,
   ): void {
-    console.info('initialize request');
     // build and return the capabilities of this debug adapter:
     response.body = response.body || {};
 
@@ -73,17 +79,17 @@ export class SentryDebugSession extends LoggingDebugSession {
 
   protected async launchRequest(
     response: DebugProtocol.LaunchResponse,
-    _args: LaunchRequestArguments,
+    args: LaunchRequestArguments,
   ): Promise<void> {
     // make sure to 'Stop' the buffered logging if 'trace' is not set
-    console.info('launch request');
     logger.setup(Logger.LogLevel.Verbose, false);
 
+    const filename = args.event;
+    this.event = JSON.parse(await readFile(filename, 'utf8'));
     this.sendResponse(response);
   }
 
   protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
-    console.info('threads request');
     response.body = {
       threads: [new Thread(1, 'fake thread')],
     };
@@ -94,7 +100,6 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.StackTraceResponse,
     _args: DebugProtocol.StackTraceArguments,
   ): void {
-    console.info('stack trace request');
     response.body = {
       stackFrames: [
         new StackFrame(
@@ -114,7 +119,6 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.ScopesResponse,
     args: DebugProtocol.ScopesArguments,
   ): void {
-    console.info('scopes request');
     const frameReference = args.frameId;
     const scopes = new Array<Scope>();
     scopes.push(
@@ -135,7 +139,6 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.VariablesResponse,
     _args: DebugProtocol.VariablesArguments,
   ): void {
-    console.info('variables request');
     const variables = new Array<DebugProtocol.Variable>();
     variables.push({
       name: 'donko',
