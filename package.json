@@ -15,6 +15,20 @@
     ],
     "main": "./out/extension",
     "contributes": {
+        "configuration": {
+            "type": "object",
+            "title": "Sentry extension configuration",
+            "properties": {
+                "sentry.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enables or disables all Sentry functionality."
+                }
+            }
+        },
+        "configurationDefaults": {
+
+        },
         "commands": [
             {
                 "command": "sentry.showIssueSearch",
