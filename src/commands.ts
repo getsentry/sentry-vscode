@@ -1,6 +1,7 @@
 import { commands, ExtensionContext, window } from 'vscode';
 
 import { startDebugging } from './debugger';
+import { showSearchInput } from './issues';
 
 enum VSCodeCommands {
   SetContext = 'setContext',
@@ -22,8 +23,8 @@ export function setContext(
   return commands.executeCommand(VSCodeCommands.SetContext, key, value);
 }
 
-function showIssueSearch(): void {
-  window.showInformationMessage('This would show the issue search box');
+function showIssueSearch(...args: any[]): void {
+  showSearchInput();
 }
 
 function startDebugger(): void {
