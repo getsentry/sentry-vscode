@@ -39,10 +39,17 @@ async function get<T>(url: string): Promise<T> {
 
 export async function searchIssues(input: string): Promise<Issue[]> {
   // TODO: Allow customizing environments
-  const baseUrl = '/api/0/projects/sentry/sentry/issues/';
   const params = '&limit=25&sort=date&shortIdLookup=1';
-  const url = `${baseUrl}?query=${encodeURIComponent(input)}${params}`;
-  return get<Issue[]>(url);
+
+  const byProject = await Promise.all(
+    configuration.getProjects().map(project => {
+      const baseUrl = `/api/0/projects/${project}/issues/`;
+      const url = `${baseUrl}?query=${encodeURIComponent(input)}${params}`;
+      return get<Issue[]>(url);
+    }),
+  );
+
+  return byProject.reduce((all, next) => all.concat(next), []);
 }
 
 export async function loadLatestEvent(issue: Issue): Promise<Event> {
