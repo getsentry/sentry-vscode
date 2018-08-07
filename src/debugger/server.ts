@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import { basename } from 'path';
 import promisify = require('util.promisify');
 import {
-  Handles,
   InitializedEvent,
   Logger,
   logger,
@@ -14,17 +13,33 @@ import {
   Thread,
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Event } from '../sentry';
+import { Event, EventException, Frame } from '../sentry';
 
+logger.setup(Logger.LogLevel.Verbose, false);
 const readFile = promisify(fs.readFile);
+const stat = promisify(fs.stat);
+
+async function isFile(path: string): Promise<boolean> {
+  try {
+    const rv = await stat(path);
+    return rv.isFile();
+  } catch (error) {
+    if (error.code === 'ENOENT' || error.code === 'ENAMETOOLONG') {
+      return false;
+    }
+    throw error;
+  }
+}
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
   event: string;
+  repos: string[];
 }
 
 export class SentryDebugSession extends LoggingDebugSession {
-  private _variableHandles: Handles<string> = new Handles<string>();
   private event!: Event;
+  private repos!: string[];
+  private exception!: EventException;
 
   /**
    * Creates a new debug adapter that is used for one debug session.
@@ -32,8 +47,6 @@ export class SentryDebugSession extends LoggingDebugSession {
    */
   public constructor() {
     super('mock-debug.txt');
-
-    console.info('debug session initiated');
 
     // this debugger uses zero-based lines and columns
     this.setDebuggerLinesStartAt1(false);
@@ -48,13 +61,8 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.InitializeResponse,
     _args: DebugProtocol.InitializeRequestArguments,
   ): void {
-    // build and return the capabilities of this debug adapter:
     response.body = response.body || {};
-
-    // the adapter implements the configurationDoneRequest.
     response.body.supportsConfigurationDoneRequest = true;
-
-    response.body.supportsDelayedStackTraceLoading = false;
 
     this.sendResponse(response);
 
@@ -81,11 +89,22 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.LaunchResponse,
     args: LaunchRequestArguments,
   ): Promise<void> {
-    // make sure to 'Stop' the buffered logging if 'trace' is not set
-    logger.setup(Logger.LogLevel.Verbose, false);
+    this.launchRequestAsync(response, args).catch(error => logger.error(error));
+  }
 
+  private async launchRequestAsync(
+    response: DebugProtocol.LaunchResponse,
+    args: LaunchRequestArguments,
+  ): Promise<void> {
     const filename = args.event;
     this.event = JSON.parse(await readFile(filename, 'utf8'));
+    this.exception = ([] as EventException[]).concat(
+      ...(this.event.entries || [])
+        .filter(entry => entry.type === 'exception')
+        .map(entry => entry.data.values),
+    )[0];
+
+    this.repos = args.repos;
     this.sendResponse(response);
   }
 
@@ -98,19 +117,36 @@ export class SentryDebugSession extends LoggingDebugSession {
 
   protected stackTraceRequest(
     response: DebugProtocol.StackTraceResponse,
-    _args: DebugProtocol.StackTraceArguments,
+    args: DebugProtocol.StackTraceArguments,
   ): void {
+    this.stackTraceRequestAsync(response, args).catch(error =>
+      logger.error(error),
+    );
+  }
+
+  private async stackTraceRequestAsync(
+    response: DebugProtocol.StackTraceResponse,
+    _args: DebugProtocol.StackTraceArguments,
+  ): Promise<void> {
+    const frames = this.exception.stacktrace.frames;
+    const forceNormal =
+      frames.every(frame => frame.inApp) || frames.every(frame => !frame.inApp);
+    const stackFrames: StackFrame[] = await Promise.all(
+      frames.map(
+        async (frame, i) =>
+          new StackFrame(
+            i,
+            frame.function,
+            (await this.createSource(frame, forceNormal)) as Source,
+            frame.lineNo,
+            frame.colNo,
+          ),
+      ),
+    );
+
     response.body = {
-      stackFrames: [
-        new StackFrame(
-          0,
-          'foo.rs',
-          this.createSource('/Users/untitaker/foo.rs'),
-          2,
-          0,
-        ),
-      ],
-      totalFrames: 1,
+      stackFrames,
+      totalFrames: stackFrames.length,
     };
     this.sendResponse(response);
   }
@@ -121,13 +157,7 @@ export class SentryDebugSession extends LoggingDebugSession {
   ): void {
     const frameReference = args.frameId;
     const scopes = new Array<Scope>();
-    scopes.push(
-      new Scope(
-        'Local',
-        this._variableHandles.create(`local_${frameReference}`),
-        false,
-      ),
-    );
+    scopes.push(new Scope('Local', frameReference, false));
 
     response.body = {
       scopes,
@@ -137,30 +167,73 @@ export class SentryDebugSession extends LoggingDebugSession {
 
   protected variablesRequest(
     response: DebugProtocol.VariablesResponse,
-    _args: DebugProtocol.VariablesArguments,
+    args: DebugProtocol.VariablesArguments,
   ): void {
-    const variables = new Array<DebugProtocol.Variable>();
-    variables.push({
-      name: 'donko',
-      type: 'integer',
-      value: '123',
-      variablesReference: 0,
-    });
+    const rv = new Array<DebugProtocol.Variable>();
+    const vars = this.exception.stacktrace.frames[args.variablesReference].vars;
+    for (const name of Object.keys(vars)) {
+      rv.push({
+        name,
+        type: 'string',
+        value: `${vars[name]}`,
+        variablesReference: args.variablesReference,
+      });
+    }
 
     response.body = {
-      variables,
+      variables: rv,
     };
     this.sendResponse(response);
   }
 
   // ---- helpers
-  private createSource(filePath: string): Source {
-    return new Source(
-      basename(filePath),
-      this.convertDebuggerPathToClient(filePath),
-      undefined,
-      undefined,
-      'mock-adapter-data',
+  private async createSource(
+    frame: Frame,
+    forceNormal: boolean,
+  ): Promise<Source> {
+    const localPath = await convertEventPathToLocalPath(
+      this.repos,
+      frame.absPath,
     );
+    const rv = new CustomSource(
+      basename(frame.absPath),
+      this.convertDebuggerPathToClient(localPath || frame.absPath),
+      frame.inApp || forceNormal ? 'normal' : 'deemphasize',
+    );
+    return rv;
+  }
+}
+
+async function convertEventPathToLocalPath(
+  repos: string[],
+  filePath: string,
+): Promise<string | undefined> {
+  const segments = filePath.split('/').reverse();
+  while (segments.length > 0) {
+    for (const prefix of [''].concat(...repos)) {
+      const path = `${prefix}/${segments
+        .slice()
+        .reverse()
+        .join('/')}`;
+      if (await isFile(path)) {
+        return path;
+      }
+    }
+    segments.pop();
+  }
+  logger.warn(`Failed to map ${filePath} to the local fs.`);
+  return undefined;
+}
+
+// tslint:disable-next-line:max-classes-per-file
+class CustomSource extends Source {
+  public presentationHint: 'normal' | 'emphasize' | 'deemphasize';
+  public constructor(
+    name: string,
+    path: string,
+    presentationHint: 'normal' | 'emphasize' | 'deemphasize',
+  ) {
+    super(name, path);
+    this.presentationHint = presentationHint;
   }
 }

@@ -16,8 +16,37 @@ export interface Issue {
 }
 
 export interface Event {
-  event_id: string;
-  // TODO: Add required attributes here
+  eventID: string;
+  entries: EventEntry[];
+}
+
+export interface EventEntry {
+  type: string;
+  data: EventEntryData;
+}
+
+export interface EventEntryData {
+  values: EventException[];
+}
+
+export interface EventException {
+  stacktrace: Stacktrace;
+  type: string;
+  value: string;
+  module: string;
+}
+
+export interface Stacktrace {
+  frames: Frame[];
+}
+
+export interface Frame {
+  absPath: string;
+  lineNo: number;
+  colNo: number;
+  inApp: boolean;
+  function: string;
+  vars: Record<string, any>;
 }
 
 export interface Organization {

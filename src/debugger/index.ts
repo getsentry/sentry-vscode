@@ -11,6 +11,7 @@ import {
   ExtensionContext,
   ProviderResult,
   window,
+  workspace,
   WorkspaceFolder,
 } from 'vscode';
 
@@ -33,11 +34,16 @@ async function createTempFile(contents: string): Promise<string> {
 
 export async function startDebugging(event: Event): Promise<boolean> {
   const tempFile = await createTempFile(JSON.stringify(event));
+  const repos = (
+    workspace.workspaceFolders ||
+    ([{ uri: { fsPath: '.' } }] as WorkspaceFolder[])
+  ).map(folder => folder.uri.fsPath);
 
   try {
     return await debug.startDebugging(undefined, {
       event: tempFile,
       name: 'View',
+      repos,
       request: 'launch',
       type: 'sentry',
     });
