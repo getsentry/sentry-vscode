@@ -21,14 +21,9 @@ function configName(config: SentryConfig): string {
 }
 
 export class Configuration {
-  private emitter: EventEmitter<SentryConfig>;
   private subscription?: Disposable;
 
   private serverUrl?: string;
-
-  public constructor() {
-    this.emitter = new EventEmitter();
-  }
 
   public configure(context: ExtensionContext): void {
     this.subscription = workspace.onDidChangeConfiguration(this.update, this);
@@ -43,7 +38,6 @@ export class Configuration {
   }
 
   public dispose(): void {
-    this.emitter.dispose();
     if (this.subscription) {
       this.subscription.dispose();
     }
