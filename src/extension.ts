@@ -1,18 +1,12 @@
-import { ExtensionContext, workspace } from 'vscode';
-import { configureCommands, SentryContext, setContext } from './commands';
+import { ExtensionContext } from 'vscode';
+
+import { configureCommands } from './commands';
+import { configuration } from './config';
 import { configureDebugger } from './debugger';
 import { configureSentry } from './sentry';
 
 export function activate(context: ExtensionContext): void {
-  const enabled = workspace
-    .getConfiguration('sentry', null)
-    .get<boolean>('enabled', true);
-
-  if (!enabled) {
-    return;
-  }
-
-  setContext(SentryContext.Enabled, enabled);
+  configuration.configure(context);
   configureCommands(context);
   configureDebugger(context);
   configureSentry();

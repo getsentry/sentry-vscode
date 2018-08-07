@@ -1,7 +1,7 @@
 import * as request from 'request-light/lib/main';
 import { workspace } from 'vscode';
 
-import { getServerUrl, getToken } from './config';
+import { configuration, getToken } from './config';
 
 export interface Issue {
   id: string;
@@ -27,7 +27,7 @@ export function configureSentry(): void {
 }
 
 async function xhr(options: request.XHROptions): Promise<request.XHRResponse> {
-  const serverUrl = await getServerUrl();
+  const serverUrl = configuration.getServerUrl();
   const token = await getToken();
 
   return request.xhr({

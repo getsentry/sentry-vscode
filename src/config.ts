@@ -3,12 +3,18 @@ import * as os from 'os';
 import * as path from 'path';
 import promisify = require('util.promisify');
 
-import { workspace } from 'vscode';
+import {
+  ConfigurationChangeEvent,
+  Disposable,
+  EventEmitter,
+  ExtensionContext,
+  workspace,
+} from 'vscode';
+import { SentryContext, setContext } from './commands';
 
 const exists = promisify(fs.exists);
 const readFile = promisify(fs.readFile);
 
-let serverUrl: string | undefined;
 let token: string | false | undefined;
 
 async function loadToken(): Promise<string | false> {
@@ -40,12 +46,70 @@ export async function getToken(): Promise<string | false> {
   return token;
 }
 
-export async function getServerUrl(): Promise<string> {
-  if (!serverUrl) {
-    serverUrl = workspace
-      .getConfiguration('sentry')
-      .get<string>('serverUrl', 'https://sentry.io');
+const NAMESPACE = 'sentry';
+
+export enum SentryConfig {
+  Enabled = 'enabled',
+  ServerUrl = 'serverUrl',
+}
+
+function configName(config: SentryConfig): string {
+  return `${NAMESPACE}.${config}`;
+}
+
+export class Configuration {
+  private emitter: EventEmitter<SentryConfig>;
+  private subscription?: Disposable;
+
+  private serverUrl?: string;
+
+  public constructor() {
+    this.emitter = new EventEmitter();
   }
 
-  return serverUrl;
+  public configure(context: ExtensionContext): void {
+    this.subscription = workspace.onDidChangeConfiguration(this.update, this);
+    context.subscriptions.push(this);
+
+    // Force initialization of all config variables
+    this.update({ affectsConfiguration: () => true });
+  }
+
+  public getServerUrl(): string {
+    return this.serverUrl || 'https://sentry.io';
+  }
+
+  public dispose(): void {
+    this.emitter.dispose();
+    if (this.subscription) {
+      this.subscription.dispose();
+    }
+  }
+
+  private get<T>(config: SentryConfig): T | undefined;
+
+  private get<T>(config: SentryConfig, defaultValue: T): T;
+
+  private get<T>(config: SentryConfig, defaultValue?: T): T | undefined {
+    return workspace
+      .getConfiguration(NAMESPACE)
+      .get<T | undefined>(config, defaultValue);
+  }
+
+  private update(event: ConfigurationChangeEvent): void {
+    if (!event.affectsConfiguration(NAMESPACE)) {
+      return;
+    }
+
+    if (event.affectsConfiguration(configName(SentryConfig.Enabled))) {
+      const enabled = this.get<boolean>(SentryConfig.Enabled, true);
+      setContext(SentryContext.Enabled, enabled);
+    }
+
+    if (event.affectsConfiguration(configName(SentryConfig.ServerUrl))) {
+      this.serverUrl = this.get<string>(SentryConfig.ServerUrl);
+    }
+  }
 }
+
+export const configuration = new Configuration();
