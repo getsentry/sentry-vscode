@@ -83,8 +83,6 @@ export class ShowProjectPickCommand extends SentryCommand<void> {
 
     if (pick) {
       configuration.setProjects([pick.id]);
-    } else {
-      configuration.setProjects([]);
     }
   }
 }
