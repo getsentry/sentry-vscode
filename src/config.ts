@@ -2,7 +2,6 @@ import * as request from 'request-light';
 import {
   ConfigurationChangeEvent,
   Disposable,
-  EventEmitter,
   ExtensionContext,
   workspace,
 } from 'vscode';

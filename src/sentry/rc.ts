@@ -3,7 +3,6 @@ import * as os from 'os';
 import * as path from 'path';
 import promisify = require('util.promisify');
 
-const exists = promisify(fs.exists);
 const readFile = promisify(fs.readFile);
 
 let token: string | false | undefined;
@@ -16,17 +15,17 @@ async function loadToken(): Promise<string | false> {
   const home = os.homedir();
   const rcpath = path.join(home, '.sentryclirc');
 
-  if (!(await exists(rcpath))) {
+  try {
+    const rc = await readFile(rcpath, 'utf8');
+    const match = rc.match(/^token\s*=\s*(\w+)$/m);
+    if (!match) {
+      return false;
+    }
+
+    return match[1].toLowerCase();
+  } catch (e) {
     return false;
   }
-
-  const rc = await readFile(rcpath, 'utf8');
-  const match = rc.match(/^token\s*=\s*(\w+)$/m);
-  if (!match) {
-    return false;
-  }
-
-  return match[1].toLowerCase();
 }
 
 export async function getToken(): Promise<string | false> {
