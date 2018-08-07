@@ -7,6 +7,12 @@ export interface Issue {
     type: string;
     value: string;
   };
+  permalink: string;
+  project: {
+    slug: string;
+    id: string;
+    name: string;
+  };
 }
 
 export interface Event {

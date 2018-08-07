@@ -1,4 +1,5 @@
 import * as request from 'request-light';
+import Uri from 'vscode-uri';
 
 import { configuration } from '../config';
 import { Event, Issue } from './interfaces';
@@ -14,13 +15,18 @@ async function xhr(options: request.XHROptions): Promise<request.XHRResponse> {
     );
   }
 
+  // Normalize the URL passed in options. If it is missing a scheme or
+  // serverUrl, the value configured in "sentry.serverUrl" is used instead.
+  const parsedUrl = Uri.parse(options.url || '');
+  const mergedUrl = Uri.parse(serverUrl).with(parsedUrl.toJSON());
+
   return request.xhr({
     ...options,
     headers: {
       Authorization: `Bearer ${token}`,
       ...options.headers,
     },
-    url: `${serverUrl}${options.url}`,
+    url: mergedUrl.toString(true),
   });
 
   // TODO: Handle common errors
