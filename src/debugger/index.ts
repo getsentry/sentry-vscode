@@ -15,7 +15,6 @@ import {
 } from 'vscode';
 
 import * as Net from 'net';
-import { createSecureContext } from 'tls';
 import { Event } from '../sentry';
 import { SentryDebugSession } from './server';
 

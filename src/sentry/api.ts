@@ -1,30 +1,8 @@
-import * as request from 'request-light/lib/main';
-import { workspace } from 'vscode';
+import * as request from 'request-light';
 
-import { configuration, getToken } from './config';
-
-export interface Issue {
-  id: string;
-  shortId: string;
-  culprit: string;
-  title: string;
-  metadata: {
-    type: string;
-    value: string;
-  };
-}
-
-export interface Event {
-  event_id: string;
-  // TODO: Add required attributes here
-}
-
-export function configureSentry(): void {
-  const http = workspace.getConfiguration('http');
-  const proxyUrl = http.get<string>('proxy', '');
-  const strictSSL = http.get<boolean>('strictSSL', false);
-  request.configure(proxyUrl, strictSSL);
-}
+import { configuration } from '../config';
+import { Event, Issue } from './interfaces';
+import { getToken } from './rc';
 
 async function xhr(options: request.XHROptions): Promise<request.XHRResponse> {
   const serverUrl = configuration.getServerUrl();

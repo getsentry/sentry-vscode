@@ -1,8 +1,4 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
-import promisify = require('util.promisify');
-
+import * as request from 'request-light';
 import {
   ConfigurationChangeEvent,
   Disposable,
@@ -10,41 +6,8 @@ import {
   ExtensionContext,
   workspace,
 } from 'vscode';
+
 import { SentryContext, setContext } from './commands';
-
-const exists = promisify(fs.exists);
-const readFile = promisify(fs.readFile);
-
-let token: string | false | undefined;
-
-async function loadToken(): Promise<string | false> {
-  // TODO: Make this more robust
-  // TODO: Add a way to ask for the token
-  // TODO: Add a way to set/refresh the token
-
-  const home = os.homedir();
-  const rcpath = path.join(home, '.sentryclirc');
-
-  if (!(await exists(rcpath))) {
-    return false;
-  }
-
-  const rc = await readFile(rcpath, 'utf8');
-  const match = rc.match(/^token\s*=\s*(\w+)$/m);
-  if (!match) {
-    return false;
-  }
-
-  return match[1].toLowerCase();
-}
-
-export async function getToken(): Promise<string | false> {
-  if (token === undefined) {
-    token = await loadToken();
-  }
-
-  return token;
-}
 
 const NAMESPACE = 'sentry';
 
@@ -108,6 +71,13 @@ export class Configuration {
 
     if (event.affectsConfiguration(configName(SentryConfig.ServerUrl))) {
       this.serverUrl = this.get<string>(SentryConfig.ServerUrl);
+    }
+
+    if (event.affectsConfiguration('http')) {
+      const http = workspace.getConfiguration('http');
+      const proxyUrl = http.get<string>('proxy', '');
+      const strictSSL = http.get<boolean>('strictSSL', false);
+      request.configure(proxyUrl, strictSSL);
     }
   }
 }
