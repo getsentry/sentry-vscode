@@ -29,7 +29,7 @@ export class ShowIssueSearchCommand extends SentryCommand<ShowIssueSearchArgs> {
     const initialQuery = args.search || DEFAULT_QUERY;
     const selection = getValueSelection(initialQuery);
 
-    const query = await window.showInputBox({
+    const search = await window.showInputBox({
       placeHolder:
         'search by issue id, message, tags, status, or tag or paste an issue link',
       prompt: 'Please search for an issue',
@@ -37,24 +37,13 @@ export class ShowIssueSearchCommand extends SentryCommand<ShowIssueSearchArgs> {
       valueSelection: selection,
     });
 
-    if (!query) {
+    if (!search) {
       // Cancel silently also for empty strings. This is just like pressing ESC,
       // for now.
       return;
     }
 
-    try {
-      // TODO: Show loading indicator and allow cancellation
-      const issues = await searchIssues(query);
-      if (issues.length === 0) {
-        window.showInformationMessage('Sorry, no issues match your query.');
-        return;
-      }
-
-      showIssueResults.execute({ issues });
-    } catch (e) {
-      window.showErrorMessage(`Could not search issues: ${e}`);
-    }
+    showIssueResults.execute({ search });
   }
 }
 
