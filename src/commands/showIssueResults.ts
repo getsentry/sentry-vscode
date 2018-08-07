@@ -5,7 +5,7 @@ import { Issue } from '../sentry';
 import { SentryCommand } from './base';
 import { showIssueActions } from './showIssueActions';
 
-export const COMMAND = 'sentry.showIssueResults';
+export const COMMAND_SHOW_ISSUE_RESULTS = 'sentry.showIssueResults';
 
 export interface ShowIssueResultsArgs {
   issues: Issue[];
@@ -24,7 +24,7 @@ export class ShowIssueResultsCommand extends SentryCommand<
   ShowIssueResultsArgs
 > {
   public constructor() {
-    super(COMMAND);
+    super(COMMAND_SHOW_ISSUE_RESULTS);
   }
 
   protected async run(args: ShowIssueResultsArgs): Promise<void> {

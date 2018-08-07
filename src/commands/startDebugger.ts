@@ -4,7 +4,7 @@ import { startDebugging } from '../debugger';
 import { Issue, loadLatestEvent } from '../sentry';
 import { SentryCommand } from './base';
 
-export const COMMAND = 'sentry.startDebugger';
+export const COMMAND_START_DEBUGGER = 'sentry.startDebugger';
 
 export interface StartDebuggerArgs {
   issue: Issue;
@@ -12,7 +12,7 @@ export interface StartDebuggerArgs {
 
 export class StartDebuggerCommand extends SentryCommand<StartDebuggerArgs> {
   public constructor() {
-    super(COMMAND);
+    super(COMMAND_START_DEBUGGER);
   }
 
   protected async run(args: StartDebuggerArgs): Promise<void> {

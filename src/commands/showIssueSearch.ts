@@ -4,7 +4,7 @@ import { searchIssues } from '../sentry';
 import { SentryCommand } from './base';
 import { showIssueResults } from './showIssueResults';
 
-export const COMMAND = 'sentry.showIssueSearch';
+export const COMMAND_SHOW_ISSUE_SEARCH = 'sentry.showIssueSearch';
 const DEFAULT_QUERY = 'is:unresolved ';
 
 export interface ShowIssueSearchArgs {
@@ -21,7 +21,7 @@ function getValueSelection(query: string): [number, number] {
 
 export class ShowIssueSearchCommand extends SentryCommand<ShowIssueSearchArgs> {
   public constructor() {
-    super(COMMAND);
+    super(COMMAND_SHOW_ISSUE_SEARCH);
   }
 
   protected async run(args: ShowIssueSearchArgs = {}): Promise<void> {

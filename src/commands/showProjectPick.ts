@@ -4,7 +4,7 @@ import { configuration } from '../config';
 import { listProjects, Project } from '../sentry';
 import { SentryCommand } from './base';
 
-export const COMMAND = 'sentry.showProjectPick';
+export const COMMAND_SHOW_PROJECT_PICK = 'sentry.showProjectPick';
 
 async function withCancellation<T>(
   cancellation: CancellationTokenSource,
@@ -63,7 +63,7 @@ async function loadProjects(): Promise<ProjectQuickPickItem[]> {
 
 export class ShowProjectPickCommand extends SentryCommand<void> {
   public constructor() {
-    super(COMMAND);
+    super(COMMAND_SHOW_PROJECT_PICK);
   }
 
   protected async run(): Promise<void> {

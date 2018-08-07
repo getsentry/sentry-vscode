@@ -11,7 +11,7 @@ import {
 } from 'vscode';
 
 import { SentryContext, setContext } from './commands';
-import { COMMAND as SHOW_PROJECT_PICK_COMMAND } from './commands/showProjectPick';
+import { COMMAND_SHOW_PROJECT_PICK } from './commands/showProjectPick';
 
 const NAMESPACE = 'sentry';
 
@@ -95,7 +95,7 @@ export class Configuration {
 
       if (!this.status) {
         this.status = window.createStatusBarItem(StatusBarAlignment.Left);
-        this.status.command = SHOW_PROJECT_PICK_COMMAND;
+        this.status.command = COMMAND_SHOW_PROJECT_PICK;
       }
 
       if (this.projects.length === 0) {
