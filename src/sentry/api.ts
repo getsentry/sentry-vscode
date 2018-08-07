@@ -8,6 +8,12 @@ async function xhr(options: request.XHROptions): Promise<request.XHRResponse> {
   const serverUrl = configuration.getServerUrl();
   const token = await getToken();
 
+  if (!token) {
+    throw new Error(
+      'Not authenticated with Sentry. Please provide an auth token.',
+    );
+  }
+
   return request.xhr({
     ...options,
     headers: {
