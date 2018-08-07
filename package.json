@@ -23,10 +23,28 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Enables or disables all Sentry functionality."
+                },
+                "sentry.serverUrl": {
+                    "type": "string",
+                    "default": "https://sentry.io",
+                    "description": "Sentry server URL for on-premise."
+                },
+                "sentry.projects": {
+                    "type": "array",
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Organization and project slugs used for searching issues (e.g. \"my-org/my-project\")"
                 }
             }
         },
         "commands": [
+            {
+                "command": "sentry.showProjectPick",
+                "title": "Select Project",
+                "category": "Sentry"
+            },
             {
                 "command": "sentry.showIssueSearch",
                 "title": "Search Issues",

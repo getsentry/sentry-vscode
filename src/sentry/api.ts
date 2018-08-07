@@ -2,7 +2,7 @@ import * as request from 'request-light';
 import Uri from 'vscode-uri';
 
 import { configuration } from '../config';
-import { Event, Issue } from './interfaces';
+import { Event, Issue, Organization, Project } from './interfaces';
 import { getToken } from './rc';
 
 async function xhr(options: request.XHROptions): Promise<request.XHRResponse> {
@@ -48,4 +48,21 @@ export async function searchIssues(input: string): Promise<Issue[]> {
 export async function loadLatestEvent(issue: Issue): Promise<Event> {
   const url = `/api/0/issues/${issue.id}/events/latest/`;
   return get<Event>(url);
+}
+
+export async function listProjects(): Promise<Project[]> {
+  const organizations = await get<Organization[]>('/api/0/organizations/');
+  if (organizations.length === 0) {
+    return [];
+  }
+
+  const orgs = await Promise.all(
+    organizations.map(async organization => {
+      const url = `/api/0/organizations/${organization.slug}/projects/`;
+      const projects = await get<Project[]>(url);
+      return projects.map(project => ({ ...project, organization }));
+    }),
+  );
+
+  return orgs.reduce((all, next) => all.concat(next), []);
 }

@@ -13,6 +13,7 @@ const NAMESPACE = 'sentry';
 export enum SentryConfig {
   Enabled = 'enabled',
   ServerUrl = 'serverUrl',
+  Projects = 'projects',
 }
 
 function configName(config: SentryConfig): string {
@@ -23,6 +24,7 @@ export class Configuration {
   private subscription?: Disposable;
 
   private serverUrl?: string;
+  private projects?: string[];
 
   public configure(context: ExtensionContext): void {
     this.subscription = workspace.onDidChangeConfiguration(this.update, this);
@@ -34,6 +36,14 @@ export class Configuration {
 
   public getServerUrl(): string {
     return this.serverUrl || 'https://sentry.io';
+  }
+
+  public getProjects(): string[] {
+    return this.projects || [];
+  }
+
+  public setProjects(projects: string[]): void {
+    this.set(SentryConfig.Projects, projects);
   }
 
   public dispose(): void {
@@ -52,6 +62,10 @@ export class Configuration {
       .get<T | undefined>(config, defaultValue);
   }
 
+  private set(config: SentryConfig, value: any): void {
+    workspace.getConfiguration(NAMESPACE).update(config, value, false);
+  }
+
   private update(event: ConfigurationChangeEvent): void {
     if (!event.affectsConfiguration(NAMESPACE)) {
       return;
@@ -64,6 +78,10 @@ export class Configuration {
 
     if (event.affectsConfiguration(configName(SentryConfig.ServerUrl))) {
       this.serverUrl = this.get<string>(SentryConfig.ServerUrl);
+    }
+
+    if (event.affectsConfiguration(configName(SentryConfig.Projects))) {
+      this.projects = this.get<string[]>(SentryConfig.Projects, []);
     }
 
     if (event.affectsConfiguration('http')) {

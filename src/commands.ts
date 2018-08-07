@@ -3,6 +3,7 @@ import { commands, ExtensionContext } from 'vscode';
 import { showIssueActions } from './commands/showIssueActions';
 import { showIssueResults } from './commands/showIssueResults';
 import { showIssueSearch } from './commands/showIssueSearch';
+import { showProjectPick } from './commands/showProjectPick';
 import { startDebugger } from './commands/startDebugger';
 
 enum VSCodeCommands {
@@ -21,6 +22,7 @@ export function setContext(
 }
 
 export function configureCommands(context: ExtensionContext): void {
+  context.subscriptions.push(showProjectPick.register());
   context.subscriptions.push(showIssueSearch.register());
   context.subscriptions.push(showIssueResults.register());
   context.subscriptions.push(showIssueActions.register());
