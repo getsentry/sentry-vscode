@@ -3,10 +3,15 @@ import {
   ConfigurationChangeEvent,
   Disposable,
   ExtensionContext,
+  StatusBarAlignment,
+  StatusBarItem,
+  ThemeColor,
+  window,
   workspace,
 } from 'vscode';
 
 import { SentryContext, setContext } from './commands';
+import { COMMAND as SHOW_PROJECT_PICK_COMMAND } from './commands/showProjectPick';
 
 const NAMESPACE = 'sentry';
 
@@ -22,6 +27,7 @@ function configName(config: SentryConfig): string {
 
 export class Configuration {
   private subscription?: Disposable;
+  private status?: StatusBarItem;
 
   private serverUrl?: string;
   private projects?: string[];
@@ -49,6 +55,10 @@ export class Configuration {
   public dispose(): void {
     if (this.subscription) {
       this.subscription.dispose();
+    }
+
+    if (this.status) {
+      this.status.dispose();
     }
   }
 
@@ -82,6 +92,24 @@ export class Configuration {
 
     if (event.affectsConfiguration(configName(SentryConfig.Projects))) {
       this.projects = this.get<string[]>(SentryConfig.Projects, []);
+
+      if (!this.status) {
+        this.status = window.createStatusBarItem(StatusBarAlignment.Left);
+        this.status.command = SHOW_PROJECT_PICK_COMMAND;
+      }
+
+      if (this.projects.length === 0) {
+        this.status.color = new ThemeColor('editorWarning.foreground');
+        this.status.text = '$(alert) Select Sentry Project';
+      } else {
+        this.status.color = new ThemeColor('statusBar.foreground');
+        this.status.text =
+          this.projects.length === 1
+            ? `Sentry: ${this.projects[0]}`
+            : (this.status.text = `Sentry: ${this.projects.length} projects`);
+      }
+
+      this.status.show();
     }
 
     if (event.affectsConfiguration('http')) {
