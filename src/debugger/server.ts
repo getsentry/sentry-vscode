@@ -115,6 +115,21 @@ export class SentryDebugSession extends LoggingDebugSession {
     this.sendResponse(response);
   }
 
+  protected sourceRequest(
+    response: DebugProtocol.SourceResponse,
+    args: DebugProtocol.SourceArguments,
+  ): void {
+    const frame = this.exception.stacktrace.frames[args.sourceReference - 1];
+    const firstLine = frame.context.length ? frame.context[0][0] : frame.lineNo;
+
+    const preContent = new Array(firstLine - 1).fill('\n').join('');
+    const context = frame.context.map(([_, s]) => s).join('\n');
+
+    response.body = response.body || {};
+    response.body.content = `${preContent}${context}\n`;
+    this.sendResponse(response);
+  }
+
   protected stackTraceRequest(
     response: DebugProtocol.StackTraceResponse,
     args: DebugProtocol.StackTraceArguments,
@@ -134,7 +149,7 @@ export class SentryDebugSession extends LoggingDebugSession {
           new StackFrame(
             i,
             frame.function,
-            (await this.createSource(frame, forceNormal)) as Source,
+            await this.createSource(i, frame, forceNormal),
             frame.lineNo,
             frame.colNo,
           ),
@@ -184,11 +199,19 @@ export class SentryDebugSession extends LoggingDebugSession {
   }
 
   // ---- helpers
-  private async createSource(frame: Frame, forceNormal: boolean): Promise<Source> {
+  private async createSource(
+    frameId: number,
+    frame: Frame,
+    forceNormal: boolean,
+  ): Promise<Source | undefined> {
     const localPath = await convertEventPathToLocalPath(this.repos, frame.absPath);
+    if (!localPath && frame.context.length === 0) {
+      return undefined;
+    }
     const rv = new CustomSource(
       basename(frame.absPath),
-      this.convertDebuggerPathToClient(localPath || frame.absPath),
+      localPath && this.convertDebuggerPathToClient(localPath),
+      localPath ? undefined : frameId + 1,
       frame.inApp || forceNormal ? 'normal' : 'deemphasize',
     );
     return rv;
@@ -218,13 +241,14 @@ async function convertEventPathToLocalPath(
 
 // tslint:disable-next-line:max-classes-per-file
 class CustomSource extends Source {
-  public presentationHint: 'normal' | 'emphasize' | 'deemphasize';
+  public presentationHint?: 'normal' | 'emphasize' | 'deemphasize';
   public constructor(
     name: string,
-    path: string,
-    presentationHint: 'normal' | 'emphasize' | 'deemphasize',
+    path?: string,
+    sourceReference?: number,
+    presentationHint?: 'normal' | 'emphasize' | 'deemphasize',
   ) {
-    super(name, path);
+    super(name, path, sourceReference);
     this.presentationHint = presentationHint;
   }
 }

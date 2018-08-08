@@ -47,6 +47,7 @@ export interface Frame {
   inApp: boolean;
   function: string;
   vars: Record<string, any>;
+  context: Array<[number, string]>;
 }
 
 export interface Organization {
