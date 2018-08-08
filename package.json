@@ -4,6 +4,7 @@
     "description": "Editor integration for sentry.io",
     "version": "0.0.1",
     "publisher": "Sentry",
+    "license": "MIT",
     "engines": {
         "vscode": "^1.25.0"
     },
