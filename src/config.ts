@@ -96,7 +96,7 @@ export class Configuration {
       }
 
       if (this.projects.length === 0) {
-        this.status.color = new ThemeColor('editorWarning.foreground');
+        this.status.color = 'yellow';
         this.status.text = '$(alert) Select Sentry Project';
       } else {
         this.status.color = new ThemeColor('statusBar.foreground');
