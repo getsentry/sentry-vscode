@@ -25,10 +25,7 @@ async function isFile(filePath: string): Promise<boolean> {
     const rv = await stat(filePath);
     return rv.isFile();
   } catch (error) {
-    if (error.code === 'ENOENT' || error.code === 'ENAMETOOLONG') {
-      return false;
-    }
-    throw error;
+    return false;
   }
 }
 
@@ -41,6 +38,8 @@ export class SentryDebugSession extends LoggingDebugSession {
   private event!: Event;
   private searchPaths!: string[];
   private exception!: EventException;
+  private frameReferences: number[] = [];
+  private variableReferences: DebugProtocol.Variable[][] = [];
 
   /**
    * Creates a new debug adapter that is used for one debug session.
@@ -86,14 +85,14 @@ export class SentryDebugSession extends LoggingDebugSession {
     this.sendEvent(new StoppedEvent('exception', 1));
   }
 
-  protected async launchRequest(
+  protected launchRequest(
     response: DebugProtocol.LaunchResponse,
     args: LaunchRequestArguments,
-  ): Promise<void> {
-    this.launchRequestAsync(response, args).catch(error => logger.error(error));
+  ): void {
+    this.handleAsyncResponse(this.launchRequestAsync, response, args);
   }
 
-  private async launchRequestAsync(
+  protected async launchRequestAsync(
     response: DebugProtocol.LaunchResponse,
     args: LaunchRequestArguments,
   ): Promise<void> {
@@ -104,9 +103,31 @@ export class SentryDebugSession extends LoggingDebugSession {
         .filter(entry => entry.type === 'exception')
         .map(entry => entry.data.values),
     )[0];
+    for (const frame of this.exception.stacktrace.frames) {
+      const indices: DebugProtocol.Variable[] = [];
+      this.frameReferences.push(this.variableReferences.push(indices) - 1);
+      this.processVars(indices, frame.vars);
+    }
 
     this.searchPaths = args.searchPaths;
-    this.sendResponse(response);
+  }
+
+  private processVars(variables: DebugProtocol.Variable[], vars: Record<string, any>): void {
+    for (const name of Object.keys(vars)) {
+      let variablesReference = 0;
+      if (Object.prototype.toString.call(vars[name]) === '[object Object]') {
+        const indices2: DebugProtocol.Variable[] = [];
+        variablesReference = this.variableReferences.push(indices2) - 1;
+        this.processVars(indices2, vars[name]);
+      }
+
+      variables.push({
+        name,
+        type: typeof vars[name],
+        value: `${vars[name]}`,
+        variablesReference,
+      });
+    }
   }
 
   protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
@@ -135,7 +156,7 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.StackTraceResponse,
     args: DebugProtocol.StackTraceArguments,
   ): void {
-    this.stackTraceRequestAsync(response, args).catch(error => logger.error(error));
+    this.handleAsyncResponse(this.stackTraceRequestAsync, response, args);
   }
 
   private async stackTraceRequestAsync(
@@ -161,14 +182,13 @@ export class SentryDebugSession extends LoggingDebugSession {
       stackFrames,
       totalFrames: stackFrames.length,
     };
-    this.sendResponse(response);
   }
 
   protected scopesRequest(
     response: DebugProtocol.ScopesResponse,
     args: DebugProtocol.ScopesArguments,
   ): void {
-    const frameReference = args.frameId;
+    const frameReference = this.frameReferences[args.frameId];
     const scopes = new Array<Scope>();
     scopes.push(new Scope('Local', frameReference, false));
 
@@ -182,19 +202,8 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.VariablesResponse,
     args: DebugProtocol.VariablesArguments,
   ): void {
-    const rv = new Array<DebugProtocol.Variable>();
-    const vars = this.exception.stacktrace.frames[args.variablesReference].vars;
-    for (const name of Object.keys(vars)) {
-      rv.push({
-        name,
-        type: 'string',
-        value: `${vars[name]}`,
-        variablesReference: args.variablesReference,
-      });
-    }
-
     response.body = {
-      variables: rv,
+      variables: this.variableReferences[args.variablesReference] || [],
     };
     this.sendResponse(response);
   }
@@ -216,6 +225,21 @@ export class SentryDebugSession extends LoggingDebugSession {
       frame.inApp || forceNormal ? 'normal' : 'deemphasize',
     );
     return rv;
+  }
+
+  private handleAsyncResponse<R extends DebugProtocol.Response, A>(
+    func: (r: R, a: A) => Promise<void>,
+    response: R,
+    args: A,
+  ): void {
+    func
+      .call(this, response, args)
+      .catch((error: Error) => {
+        logger.error(error.message);
+        response.message = error.message;
+        response.success = false;
+      })
+      .then(() => this.sendResponse(response));
   }
 }
 
