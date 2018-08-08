@@ -37,6 +37,14 @@
                         "type": "string"
                     },
                     "description": "Organization and project slugs used for searching issues (e.g. \"my-org/my-project\")"
+                },
+                "sentry.searchPaths": {
+                    "type": "array",
+                    "default": [],
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Local paths to search for source files. The workspace directory and common system locations will be searched by default."
                 }
             }
         },

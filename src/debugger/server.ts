@@ -1,6 +1,7 @@
 import * as fs from 'fs';
-import { basename } from 'path';
+import * as path from 'path';
 import * as promisify from 'util.promisify';
+import { workspace } from 'vscode';
 import {
   InitializedEvent,
   Logger,
@@ -19,9 +20,9 @@ logger.setup(Logger.LogLevel.Verbose, false);
 const readFile = promisify(fs.readFile);
 const stat = promisify(fs.stat);
 
-async function isFile(path: string): Promise<boolean> {
+async function isFile(filePath: string): Promise<boolean> {
   try {
-    const rv = await stat(path);
+    const rv = await stat(filePath);
     return rv.isFile();
   } catch (error) {
     if (error.code === 'ENOENT' || error.code === 'ENAMETOOLONG') {
@@ -33,12 +34,12 @@ async function isFile(path: string): Promise<boolean> {
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
   event: string;
-  repos: string[];
+  searchPaths: string[];
 }
 
 export class SentryDebugSession extends LoggingDebugSession {
   private event!: Event;
-  private repos!: string[];
+  private searchPaths!: string[];
   private exception!: EventException;
 
   /**
@@ -104,7 +105,7 @@ export class SentryDebugSession extends LoggingDebugSession {
         .map(entry => entry.data.values),
     )[0];
 
-    this.repos = args.repos;
+    this.searchPaths = args.searchPaths;
     this.sendResponse(response);
   }
 
@@ -204,12 +205,12 @@ export class SentryDebugSession extends LoggingDebugSession {
     frame: Frame,
     forceNormal: boolean,
   ): Promise<Source | undefined> {
-    const localPath = await convertEventPathToLocalPath(this.repos, frame.absPath);
+    const localPath = await convertEventPathToLocalPath(this.searchPaths, frame.absPath);
     if (!localPath && frame.context.length === 0) {
       return undefined;
     }
     const rv = new CustomSource(
-      basename(frame.absPath),
+      path.basename(frame.absPath),
       localPath && this.convertDebuggerPathToClient(localPath),
       localPath ? undefined : frameId + 1,
       frame.inApp || forceNormal ? 'normal' : 'deemphasize',
@@ -219,22 +220,25 @@ export class SentryDebugSession extends LoggingDebugSession {
 }
 
 async function convertEventPathToLocalPath(
-  repos: string[],
+  searchPaths: string[],
   filePath: string,
 ): Promise<string | undefined> {
-  const segments = filePath.split('/').reverse();
+  const segments = filePath
+    .split(/\/+/g)
+    .filter(segment => !segment.endsWith(':'))
+    .filter(segment => segment !== '.');
+
   while (segments.length > 0) {
-    for (const prefix of [''].concat(...repos)) {
-      const path = `${prefix}/${segments
-        .slice()
-        .reverse()
-        .join('/')}`;
-      if (await isFile(path)) {
-        return path;
+    for (const prefix of searchPaths) {
+      const absPath = path.resolve(workspace.rootPath || '', prefix, ...segments);
+      if (await isFile(absPath)) {
+        return absPath;
       }
     }
-    segments.pop();
+
+    segments.shift();
   }
+
   logger.warn(`Failed to map ${filePath} to the local fs.`);
   return undefined;
 }
@@ -244,11 +248,11 @@ class CustomSource extends Source {
   public presentationHint?: 'normal' | 'emphasize' | 'deemphasize';
   public constructor(
     name: string,
-    path?: string,
+    filePath?: string,
     sourceReference?: number,
     presentationHint?: 'normal' | 'emphasize' | 'deemphasize',
   ) {
-    super(name, path, sourceReference);
+    super(name, filePath, sourceReference);
     this.presentationHint = presentationHint;
   }
 }

@@ -11,6 +11,7 @@ import {
 } from 'vscode';
 import { SentryContext, setContext } from './commands';
 import { COMMAND_SHOW_PROJECT_PICK } from './commands/showProjectPick';
+import { affectsSearchPaths, discoverSearchPaths } from './paths';
 
 const NAMESPACE = 'sentry';
 
@@ -18,6 +19,7 @@ export enum SentryConfig {
   Enabled = 'enabled',
   ServerUrl = 'serverUrl',
   Projects = 'projects',
+  SearchPaths = 'searchPaths',
 }
 
 function configName(config: SentryConfig): string {
@@ -30,6 +32,7 @@ export class Configuration {
 
   private serverUrl?: string;
   private projects?: string[];
+  private searchPaths?: string[];
 
   public configure(context: ExtensionContext): void {
     this.subscription = workspace.onDidChangeConfiguration(this.update, this);
@@ -49,6 +52,10 @@ export class Configuration {
 
   public setProjects(projects: string[]): void {
     this.set(SentryConfig.Projects, projects);
+  }
+
+  public getSearchPaths(): string[] {
+    return this.searchPaths || [];
   }
 
   public dispose(): void {
@@ -107,6 +114,14 @@ export class Configuration {
       }
 
       this.status.show();
+    }
+
+    if (
+      event.affectsConfiguration(configName(SentryConfig.SearchPaths)) ||
+      affectsSearchPaths(event)
+    ) {
+      const paths = this.get<string[]>(SentryConfig.SearchPaths, []);
+      this.searchPaths = paths.concat(discoverSearchPaths());
     }
 
     if (event.affectsConfiguration('http')) {

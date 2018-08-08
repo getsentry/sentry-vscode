@@ -11,9 +11,9 @@ import {
   ExtensionContext,
   ProviderResult,
   window,
-  workspace,
   WorkspaceFolder,
 } from 'vscode';
+import { configuration } from '../config';
 import { Event } from '../sentry';
 import { SentryDebugSession } from './server';
 
@@ -36,14 +36,18 @@ class SentryConfigurationProvider implements DebugConfigurationProvider {
     _token?: CancellationToken,
   ): ProviderResult<DebugConfiguration> {
     if (!config.event) {
-      // abort launch
+      // The event is required. We need to abort if it is missing.
       return window.showInformationMessage('Missing event payload').then(() => undefined);
     }
 
+    if (!config.searchPaths) {
+      config.searchPaths = [];
+    }
+
+    // Start a debug server in-process to allow debugging in development.
+    // In production, VSCode will spawn a separate process.
     if (EMBED_DEBUG_ADAPTER) {
-      // start port listener on launch of first debug session
       if (!this._server) {
-        // start listening on a random port
         this._server = Net.createServer(socket => {
           const session = new SentryDebugSession();
           session.setRunAsServer(true);
@@ -51,9 +55,10 @@ class SentryConfigurationProvider implements DebugConfigurationProvider {
         }).listen(0);
       }
 
-      // make VS Code connect to debug server instead of launching debug adapter
+      // Make VS Code connect to debug server instead of launching debug adapter
       config.debugServer = this._server.address().port;
     }
+
     return config;
   }
 
@@ -76,17 +81,17 @@ async function createTempFile(contents: string): Promise<string> {
 
 export async function startDebugging(event: Event): Promise<boolean> {
   const tempFile = await createTempFile(JSON.stringify(event));
-  const repos = (
-    workspace.workspaceFolders || ([{ uri: { fsPath: '.' } }] as WorkspaceFolder[])
-  ).map(folder => folder.uri.fsPath);
 
   try {
     return await debug.startDebugging(undefined, {
-      event: tempFile,
+      // Interface arguments
       name: 'View',
-      repos,
       request: 'launch',
       type: 'sentry',
+
+      // Custom arguments
+      event: tempFile,
+      searchPaths: configuration.getSearchPaths(),
     });
   } finally {
     await unlink(tempFile);
