@@ -1,65 +1,49 @@
-# vscode-sentry README
+<p align="center">
+  <a href="https://sentry.io" target="_blank" align="center">
+    <img src="https://sentry-brand.storage.googleapis.com/sentry-logo-black.png" width="280">
+  </a>
+  <br />
+</p>
 
-This is the README for your extension "vscode-sentry". After writing up a brief description, we recommend including the following sections.
+# Sentry Integration for Visual Studio Code
+
+VSCode extension to browse [Sentry](https://sentry.io) issues and navigate stack
+traces directly in VSCode.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- Browse Sentry projects and issues from VSCode
+- Launch the debugger to navigate stack traces and see variables
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+This extension requires a Sentry account. You can
+[sign up for free](https://sentry.io/signup/) and then follow the
+[quickstart guide](https://docs.sentry.io/quickstart/) to set up a project and
+integrate it into your software.
+
+## Usage
+
+Run the command _Sentry: Search Issues_ from the command palette
+(`CMD + Shift + P` or `Ctrl + Shift + P`) and enter a search term. You can also
+use all search filters that work on the Sentry issues page. Then, select an
+issue from the list.
+
+To start a debugging session, choose _Launch debugger on Issue_ from the actions
+panel. Please note that your workspace needs to contain the project sources or
+search paths have to be configured. See
+[Extension Settings](#extension-settings) for more information on configuration.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
 This extension contributes the following settings:
 
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
+- `sentry.enabled`: Enable or disable this extension
+- `sentry.serverUrl`: Use a custom on-premise server
+- `sentry.projects`: Select projects for searching issues
 
-## Known Issues
+## Development
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
------------------------------------------------------------------------------------------------------------
-
-## Working with Markdown
-
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (macOS) to see a list of Markdown snippets
-
-### For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+Please feel free to open issues or PRs. To build and run this configuration,
+open this repository in VSCode and run the _Extension_ target. To run tests, run
+the _Extension Tests_ target.
