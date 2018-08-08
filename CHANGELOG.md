@@ -1,7 +1,8 @@
-# Change Log
-All notable changes to the "vscode-sentry" extension will be documented in this file.
-
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+# Changelog
 
 ## [Unreleased]
-- Initial release
+
+Initial release 🎉
+
+- Browse Sentry issues from VSCode
+- Launch the debugger to navigate stack traces and see variables
