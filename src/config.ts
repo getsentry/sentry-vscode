@@ -33,6 +33,7 @@ export class Configuration {
   private serverUrl?: string;
   private projects?: string[];
   private searchPaths?: string[];
+  private systemPaths?: string[];
 
   public configure(context: ExtensionContext): void {
     this.subscription = workspace.onDidChangeConfiguration(this.update, this);
@@ -55,7 +56,7 @@ export class Configuration {
   }
 
   public getSearchPaths(): string[] {
-    return this.searchPaths || [];
+    return (this.searchPaths || []).concat(this.systemPaths || []);
   }
 
   public dispose(): void {
@@ -116,12 +117,14 @@ export class Configuration {
       this.status.show();
     }
 
-    if (
-      event.affectsConfiguration(configName(SentryConfig.SearchPaths)) ||
-      affectsSearchPaths(event)
-    ) {
-      const paths = this.get<string[]>(SentryConfig.SearchPaths, []);
-      this.searchPaths = paths.concat(discoverSearchPaths());
+    if (event.affectsConfiguration(configName(SentryConfig.SearchPaths))) {
+      this.searchPaths = this.get<string[]>(SentryConfig.SearchPaths, []);
+    }
+
+    if (affectsSearchPaths(event)) {
+      discoverSearchPaths()
+        .then(paths => (this.systemPaths = paths))
+        .catch(e => console.error('Error loading searchPaths:', e));
     }
 
     if (event.affectsConfiguration('http')) {
