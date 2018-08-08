@@ -1,8 +1,7 @@
 import * as fs from 'fs';
+import * as ini from 'ini';
 import * as os from 'os';
 import * as path from 'path';
-
-import * as ini from 'ini';
 import * as promisify from 'util.promisify';
 
 const readFile = promisify(fs.readFile);

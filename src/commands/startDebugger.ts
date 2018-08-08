@@ -1,5 +1,4 @@
 import { window } from 'vscode';
-
 import { startDebugging } from '../debugger';
 import { Issue, loadLatestEvent } from '../sentry';
 import { SentryCommand } from './base';

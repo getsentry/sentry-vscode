@@ -9,7 +9,6 @@ import {
   window,
   workspace,
 } from 'vscode';
-
 import { SentryContext, setContext } from './commands';
 import { COMMAND_SHOW_PROJECT_PICK } from './commands/showProjectPick';
 
@@ -67,9 +66,7 @@ export class Configuration {
   private get<T>(config: SentryConfig, defaultValue: T): T;
 
   private get<T>(config: SentryConfig, defaultValue?: T): T | undefined {
-    return workspace
-      .getConfiguration(NAMESPACE)
-      .get<T | undefined>(config, defaultValue);
+    return workspace.getConfiguration(NAMESPACE).get<T | undefined>(config, defaultValue);
   }
 
   private set(config: SentryConfig, value: any): void {

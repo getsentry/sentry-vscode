@@ -1,6 +1,5 @@
 import * as request from 'request-light';
 import Uri from 'vscode-uri';
-
 import { configuration } from '../config';
 import { Event, Issue, Organization, Project } from './interfaces';
 import { getToken } from './rc';
@@ -10,9 +9,7 @@ async function xhr(options: request.XHROptions): Promise<request.XHRResponse> {
   const token = await getToken();
 
   if (!token) {
-    throw new Error(
-      'Not authenticated with Sentry. Please provide an auth token.',
-    );
+    throw new Error('Not authenticated with Sentry. Please provide an auth token.');
   }
 
   // Normalize the URL passed in options. If it is missing a scheme or

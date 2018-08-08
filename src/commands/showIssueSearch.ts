@@ -1,6 +1,4 @@
 import { window } from 'vscode';
-
-import { searchIssues } from '../sentry';
 import { SentryCommand } from './base';
 import { showIssueResults } from './showIssueResults';
 
@@ -30,8 +28,7 @@ export class ShowIssueSearchCommand extends SentryCommand<ShowIssueSearchArgs> {
     const selection = getValueSelection(initialQuery);
 
     const search = await window.showInputBox({
-      placeHolder:
-        'search by issue id, message, tags, status, or tag or paste an issue link',
+      placeHolder: 'search by issue id, message, tags, status, or tag or paste an issue link',
       prompt: 'Please search for an issue',
       value: initialQuery,
       valueSelection: selection,

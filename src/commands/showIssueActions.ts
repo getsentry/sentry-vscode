@@ -1,5 +1,4 @@
 import { window } from 'vscode';
-
 import { CommandQuickPickItem } from '../pick';
 import { Issue } from '../sentry';
 import { SentryCommand } from './base';
@@ -11,20 +10,16 @@ export interface ShowIssueActionsArgs {
   issue: Issue;
 }
 
-export class ShowIssueActionsCommand extends SentryCommand<
-  ShowIssueActionsArgs
-> {
+export class ShowIssueActionsCommand extends SentryCommand<ShowIssueActionsArgs> {
   public constructor() {
     super(COMMAND_SHOW_ISSUE_ACTIONS);
   }
 
   protected async run(args: ShowIssueActionsArgs): Promise<void> {
     const cmds = [
-      CommandQuickPickItem.from(
-        { label: 'Launch debugger on Issue' },
-        startDebugger,
-        { issue: args.issue },
-      ),
+      CommandQuickPickItem.from({ label: 'Launch debugger on Issue' }, startDebugger, {
+        issue: args.issue,
+      }),
     ];
 
     const pick = await window.showQuickPick(cmds);

@@ -15,9 +15,7 @@ export abstract class SentryCommand<A> {
   }
 
   public register(): this {
-    this.disposable = commands.registerCommand(this.command, (args: A) =>
-      this.run(args),
-    );
+    this.disposable = commands.registerCommand(this.command, (args: A) => this.run(args));
 
     return this;
   }

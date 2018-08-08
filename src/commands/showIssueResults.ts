@@ -1,5 +1,4 @@
 import { CancellationTokenSource, window } from 'vscode';
-
 import { CommandQuickPickItem } from '../pick';
 import { Issue, searchIssues } from '../sentry';
 import { SentryCommand } from './base';
@@ -43,9 +42,7 @@ async function loadIssueResults(
   }
 }
 
-export class ShowIssueResultsCommand extends SentryCommand<
-  ShowIssueResultsArgs
-> {
+export class ShowIssueResultsCommand extends SentryCommand<ShowIssueResultsArgs> {
   public constructor() {
     super(COMMAND_SHOW_ISSUE_RESULTS);
   }

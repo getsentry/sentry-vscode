@@ -17,11 +17,7 @@ export class CommandQuickPickItem implements QuickPickItem {
     return new CommandQuickPickItem(item, command, args);
   }
 
-  private constructor(
-    item: QuickPickItem,
-    command: SentryCommand<any>,
-    args: any,
-  ) {
+  private constructor(item: QuickPickItem, command: SentryCommand<any>, args: any) {
     this.command = command;
     this.args = args;
 

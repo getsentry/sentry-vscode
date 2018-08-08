@@ -1,5 +1,4 @@
 import { CancellationTokenSource, QuickPickItem, window } from 'vscode';
-
 import { configuration } from '../config';
 import { listProjects, Project } from '../sentry';
 import { SentryCommand } from './base';

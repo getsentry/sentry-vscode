@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import { basename } from 'path';
-import promisify = require('util.promisify');
+import * as promisify from 'util.promisify';
 import {
   InitializedEvent,
   Logger,
@@ -119,9 +119,7 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.StackTraceResponse,
     args: DebugProtocol.StackTraceArguments,
   ): void {
-    this.stackTraceRequestAsync(response, args).catch(error =>
-      logger.error(error),
-    );
+    this.stackTraceRequestAsync(response, args).catch(error => logger.error(error));
   }
 
   private async stackTraceRequestAsync(
@@ -129,8 +127,7 @@ export class SentryDebugSession extends LoggingDebugSession {
     _args: DebugProtocol.StackTraceArguments,
   ): Promise<void> {
     const frames = this.exception.stacktrace.frames;
-    const forceNormal =
-      frames.every(frame => frame.inApp) || frames.every(frame => !frame.inApp);
+    const forceNormal = frames.every(frame => frame.inApp) || frames.every(frame => !frame.inApp);
     const stackFrames: StackFrame[] = await Promise.all(
       frames.map(
         async (frame, i) =>
@@ -187,14 +184,8 @@ export class SentryDebugSession extends LoggingDebugSession {
   }
 
   // ---- helpers
-  private async createSource(
-    frame: Frame,
-    forceNormal: boolean,
-  ): Promise<Source> {
-    const localPath = await convertEventPathToLocalPath(
-      this.repos,
-      frame.absPath,
-    );
+  private async createSource(frame: Frame, forceNormal: boolean): Promise<Source> {
+    const localPath = await convertEventPathToLocalPath(this.repos, frame.absPath);
     const rv = new CustomSource(
       basename(frame.absPath),
       this.convertDebuggerPathToClient(localPath || frame.absPath),

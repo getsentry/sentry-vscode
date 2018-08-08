@@ -1,8 +1,8 @@
 import * as fs from 'fs';
+import * as Net from 'net';
 import * as os from 'os';
 import * as path from 'path';
-import promisify = require('util.promisify');
-
+import * as promisify from 'util.promisify';
 import {
   CancellationToken,
   debug,
@@ -14,8 +14,6 @@ import {
   workspace,
   WorkspaceFolder,
 } from 'vscode';
-
-import * as Net from 'net';
 import { Event } from '../sentry';
 import { SentryDebugSession } from './server';
 
@@ -35,8 +33,7 @@ async function createTempFile(contents: string): Promise<string> {
 export async function startDebugging(event: Event): Promise<boolean> {
   const tempFile = await createTempFile(JSON.stringify(event));
   const repos = (
-    workspace.workspaceFolders ||
-    ([{ uri: { fsPath: '.' } }] as WorkspaceFolder[])
+    workspace.workspaceFolders || ([{ uri: { fsPath: '.' } }] as WorkspaceFolder[])
   ).map(folder => folder.uri.fsPath);
 
   try {
@@ -71,9 +68,7 @@ export class SentryConfigurationProvider implements DebugConfigurationProvider {
     _token?: CancellationToken,
   ): ProviderResult<DebugConfiguration> {
     if (!config.event) {
-      return window
-        .showInformationMessage('Cannot find a program to debug')
-        .then(_ => undefined); // abort launch
+      return window.showInformationMessage('Cannot find a program to debug').then(_ => undefined); // abort launch
     }
 
     if (EMBED_DEBUG_ADAPTER) {
@@ -100,8 +95,6 @@ export class SentryConfigurationProvider implements DebugConfigurationProvider {
 
 export function configureDebugger(context: ExtensionContext): void {
   const provider = new SentryConfigurationProvider();
-  context.subscriptions.push(
-    debug.registerDebugConfigurationProvider('sentry', provider),
-  );
+  context.subscriptions.push(debug.registerDebugConfigurationProvider('sentry', provider));
   context.subscriptions.push(provider);
 }

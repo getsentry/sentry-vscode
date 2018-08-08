@@ -1,5 +1,4 @@
 import { ExtensionContext } from 'vscode';
-
 import { configureCommands } from './commands';
 import { configuration } from './config';
 import { configureDebugger } from './debugger';
