@@ -149,16 +149,18 @@ export class SentryDebugSession extends LoggingDebugSession {
     const frames = this.exception.stacktrace.frames;
     const forceNormal = frames.every(frame => frame.inApp) || frames.every(frame => !frame.inApp);
     const stackFrames: StackFrame[] = await Promise.all(
-      frames.map(
-        async (frame, i) =>
-          new StackFrame(
-            i,
-            frame.function,
-            await this.createSource(i, frame, forceNormal),
-            frame.lineNo,
-            frame.colNo,
-          ),
-      ),
+      frames
+        .map(
+          async (frame, i) =>
+            new StackFrame(
+              i,
+              frame.function,
+              await this.createSource(i, frame, forceNormal),
+              frame.lineNo,
+              frame.colNo,
+            ),
+        )
+        .reverse(),
     );
 
     response.body = {
