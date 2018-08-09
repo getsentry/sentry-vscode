@@ -2,7 +2,17 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as promisify from 'util.promisify';
 import { workspace } from 'vscode';
-import { InitializedEvent, Logger, logger, LoggingDebugSession, Scope, Source, StackFrame, StoppedEvent, Thread } from 'vscode-debugadapter';
+import {
+  InitializedEvent,
+  Logger,
+  logger,
+  LoggingDebugSession,
+  Scope,
+  Source,
+  StackFrame,
+  StoppedEvent,
+  Thread,
+} from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Event, EventException, Frame } from '../sentry';
 import { IndexMapper } from './indexMapper';
@@ -84,8 +94,6 @@ export class SentryDebugSession extends LoggingDebugSession {
       ...response.body,
       supportsConfigurationDoneRequest: true,
       supportsExceptionInfoRequest: true,
-      // supportsLoadedSourcesRequest: true,
-      // supportsLogPoints: true,
       // supportsModulesRequest: true,
     };
 
