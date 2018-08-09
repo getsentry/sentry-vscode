@@ -34,6 +34,10 @@ export interface EventException {
   type: string;
   value: string;
   module: string;
+  mechanism?: {
+    type?: string;
+    handled?: boolean;
+  };
 }
 
 export interface Stacktrace {
@@ -42,6 +46,7 @@ export interface Stacktrace {
 
 export interface Frame {
   absPath: string;
+  fileName: string;
   lineNo: number;
   colNo: number;
   inApp: boolean;

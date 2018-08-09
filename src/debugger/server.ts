@@ -2,17 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as promisify from 'util.promisify';
 import { workspace } from 'vscode';
-import {
-  InitializedEvent,
-  Logger,
-  logger,
-  LoggingDebugSession,
-  Scope,
-  Source,
-  StackFrame,
-  StoppedEvent,
-  Thread,
-} from 'vscode-debugadapter';
+import { InitializedEvent, Logger, logger, LoggingDebugSession, Scope, Source, StackFrame, StoppedEvent, Thread } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Event, EventException, Frame } from '../sentry';
 import { IndexMapper } from './indexMapper';
@@ -30,6 +20,27 @@ async function isFile(filePath: string): Promise<boolean> {
   }
 }
 
+function formatFrame(frame: Frame): string {
+  return `${frame.fileName} in ${frame.function} at line ${frame.lineNo}:${frame.colNo}`;
+}
+
+function getExceptionDetails(
+  exceptions: EventException[],
+): DebugProtocol.ExceptionDetails | undefined {
+  if (exceptions.length === 0) {
+    return undefined;
+  }
+
+  const exception = exceptions[0];
+  const inner = getExceptionDetails(exceptions.slice(1));
+  return {
+    innerException: inner ? [inner] : [],
+    message: exception.value,
+    stackTrace: exception.stacktrace.frames.map(formatFrame).join('\n'),
+    typeName: exception.type,
+  };
+}
+
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
   event: string;
   searchPaths: string[];
@@ -38,7 +49,9 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 export class SentryDebugSession extends LoggingDebugSession {
   private event!: Event;
   private searchPaths!: string[];
-  private exception!: EventException;
+
+  private exceptions: EventException[] = [];
+  private exception?: EventException;
 
   /**
    * A mapping from arrays of the form [frameId, varName1, varField1, varField2, ...] to variableReferences.
@@ -67,8 +80,14 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.InitializeResponse,
     _args: DebugProtocol.InitializeRequestArguments,
   ): void {
-    response.body = response.body || {};
-    response.body.supportsConfigurationDoneRequest = true;
+    response.body = {
+      ...response.body,
+      supportsConfigurationDoneRequest: true,
+      supportsExceptionInfoRequest: true,
+      // supportsLoadedSourcesRequest: true,
+      // supportsLogPoints: true,
+      // supportsModulesRequest: true,
+    };
 
     this.sendResponse(response);
 
@@ -104,11 +123,13 @@ export class SentryDebugSession extends LoggingDebugSession {
   ): Promise<void> {
     const filename = args.event;
     this.event = JSON.parse(await readFile(filename, 'utf8'));
-    this.exception = ([] as EventException[]).concat(
-      ...(this.event.entries || [])
-        .filter(entry => entry.type === 'exception')
-        .map(entry => entry.data.values),
-    )[0];
+
+    this.exceptions = (this.event.entries || [])
+      .filter(entry => entry.type === 'exception')
+      .map(entry => entry.data.values)
+      .reduce((all, next) => all.concat(next));
+
+    this.exception = this.exceptions.shift();
 
     this.searchPaths = args.searchPaths;
   }
@@ -117,6 +138,7 @@ export class SentryDebugSession extends LoggingDebugSession {
     response.body = {
       threads: [new Thread(1, 'fake thread')],
     };
+
     this.sendResponse(response);
   }
 
@@ -124,14 +146,16 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.SourceResponse,
     args: DebugProtocol.SourceArguments,
   ): void {
-    const frame = this.exception.stacktrace.frames[args.sourceReference - 1];
-    const firstLine = frame.context.length ? frame.context[0][0] : frame.lineNo;
+    if (this.exception) {
+      const frame = this.exception.stacktrace.frames[args.sourceReference - 1];
+      const firstLine = frame.context.length ? frame.context[0][0] : frame.lineNo;
 
-    const preContent = new Array(firstLine - 1).fill('\n').join('');
-    const context = frame.context.map(([_, s]) => s).join('\n');
+      const preContent = new Array(firstLine - 1).fill('\n').join('');
+      const context = frame.context.map(([_, s]) => s).join('\n');
 
-    response.body = response.body || {};
-    response.body.content = `${preContent}${context}\n`;
+      response.body = { ...response.body, content: `${preContent}${context}\n` };
+    }
+
     this.sendResponse(response);
   }
 
@@ -146,6 +170,10 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.StackTraceResponse,
     _args: DebugProtocol.StackTraceArguments,
   ): Promise<void> {
+    if (!this.exception) {
+      return;
+    }
+
     const frames = this.exception.stacktrace.frames;
     const forceNormal = frames.every(frame => frame.inApp) || frames.every(frame => !frame.inApp);
     const stackFrames: StackFrame[] = await Promise.all(
@@ -183,15 +211,15 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.VariablesResponse,
     args: DebugProtocol.VariablesArguments,
   ): void {
-    const variablePath = this.varsMapper.getArray(args.variablesReference);
-    const frameId = variablePath[0] as number;
-    let vars = this.exception.stacktrace.frames[frameId].vars;
-    for (const segment of variablePath.slice(1)) {
-      vars = vars[segment];
-    }
+    if (this.exception) {
+      const variablePath = this.varsMapper.getArray(args.variablesReference);
+      const frameId = variablePath[0] as number;
+      let vars = this.exception.stacktrace.frames[frameId].vars;
+      for (const segment of variablePath.slice(1)) {
+        vars = vars[segment];
+      }
 
-    response.body = {
-      variables: Object.keys(vars).map(name => ({
+      const variables = Object.keys(vars).map(name => ({
         name,
         type: typeof vars[name],
         value: `${vars[name]}`,
@@ -202,8 +230,29 @@ export class SentryDebugSession extends LoggingDebugSession {
                 this.varsMapper.getArray(args.variablesReference).concat(name),
               )
             : 0,
-      })),
-    };
+      }));
+
+      response.body = { ...response.body, variables };
+    }
+
+    this.sendResponse(response);
+  }
+
+  protected exceptionInfoRequest(
+    response: DebugProtocol.ExceptionInfoResponse,
+    _args: DebugProtocol.ExceptionInfoArguments,
+  ): void {
+    if (this.exception) {
+      const handled = (this.exception.mechanism || {}).handled || false;
+
+      response.body = {
+        ...response.body,
+        breakMode: handled ? 'always' : 'unhandled',
+        description: `${this.exception.type}: ${this.exception.value}`,
+        details: getExceptionDetails(this.exceptions),
+      };
+    }
+
     this.sendResponse(response);
   }
 
