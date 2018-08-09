@@ -15,6 +15,7 @@ import {
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Event, EventException, Frame } from '../sentry';
+import { IndexMapper } from './indexMapper';
 
 logger.setup(Logger.LogLevel.Verbose, false);
 const readFile = promisify(fs.readFile);
@@ -38,8 +39,13 @@ export class SentryDebugSession extends LoggingDebugSession {
   private event!: Event;
   private searchPaths!: string[];
   private exception!: EventException;
-  private frameReferences: number[] = [];
-  private variableReferences: DebugProtocol.Variable[][] = [];
+
+  /**
+   * A mapping from arrays of the form [frameId, varName1, varField1, varField2, ...] to variableReferences.
+   *
+   * [1, "foo", "bar"] means for example that attribute "bar" of variable "foo" in frame 1 is accessed.
+   */
+  private varsMapper: IndexMapper = new IndexMapper();
 
   /**
    * Creates a new debug adapter that is used for one debug session.
@@ -93,7 +99,7 @@ export class SentryDebugSession extends LoggingDebugSession {
   }
 
   protected async launchRequestAsync(
-    response: DebugProtocol.LaunchResponse,
+    _response: DebugProtocol.LaunchResponse,
     args: LaunchRequestArguments,
   ): Promise<void> {
     const filename = args.event;
@@ -103,31 +109,8 @@ export class SentryDebugSession extends LoggingDebugSession {
         .filter(entry => entry.type === 'exception')
         .map(entry => entry.data.values),
     )[0];
-    for (const frame of this.exception.stacktrace.frames) {
-      const indices: DebugProtocol.Variable[] = [];
-      this.frameReferences.push(this.variableReferences.push(indices) - 1);
-      this.processVars(indices, frame.vars);
-    }
 
     this.searchPaths = args.searchPaths;
-  }
-
-  private processVars(variables: DebugProtocol.Variable[], vars: Record<string, any>): void {
-    for (const name of Object.keys(vars)) {
-      let variablesReference = 0;
-      if (Object.prototype.toString.call(vars[name]) === '[object Object]') {
-        const indices2: DebugProtocol.Variable[] = [];
-        variablesReference = this.variableReferences.push(indices2) - 1;
-        this.processVars(indices2, vars[name]);
-      }
-
-      variables.push({
-        name,
-        type: typeof vars[name],
-        value: `${vars[name]}`,
-        variablesReference,
-      });
-    }
   }
 
   protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
@@ -188,12 +171,8 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.ScopesResponse,
     args: DebugProtocol.ScopesArguments,
   ): void {
-    const frameReference = this.frameReferences[args.frameId];
-    const scopes = new Array<Scope>();
-    scopes.push(new Scope('Local', frameReference, false));
-
     response.body = {
-      scopes,
+      scopes: [new Scope('Local', this.varsMapper.upsertArray([args.frameId]), false)],
     };
     this.sendResponse(response);
   }
@@ -202,8 +181,26 @@ export class SentryDebugSession extends LoggingDebugSession {
     response: DebugProtocol.VariablesResponse,
     args: DebugProtocol.VariablesArguments,
   ): void {
+    const variablePath = this.varsMapper.getArray(args.variablesReference);
+    const frameId = variablePath[0] as number;
+    let vars = this.exception.stacktrace.frames[frameId].vars;
+    for (const segment of variablePath.slice(1)) {
+      vars = vars[segment];
+    }
+
     response.body = {
-      variables: this.variableReferences[args.variablesReference] || [],
+      variables: Object.keys(vars).map(name => ({
+        name,
+        type: typeof vars[name],
+        value: `${vars[name]}`,
+        variablesReference:
+          Object.prototype.toString.call(vars[name]) === '[object Object]' ||
+          Object.prototype.toString.call(vars[name]) === '[object Array]'
+            ? this.varsMapper.upsertArray(
+                this.varsMapper.getArray(args.variablesReference).concat(name),
+              )
+            : 0,
+      })),
     };
     this.sendResponse(response);
   }
