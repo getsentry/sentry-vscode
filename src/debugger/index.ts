@@ -1,8 +1,4 @@
-import * as fs from 'fs';
 import * as Net from 'net';
-import * as os from 'os';
-import * as path from 'path';
-import * as promisify from 'util.promisify';
 import {
   CancellationToken,
   debug,
@@ -15,10 +11,8 @@ import {
 } from 'vscode';
 import { configuration } from '../config';
 import { Event } from '../sentry';
+import { withTempFile } from '../utils';
 import { SentryDebugSession } from './server';
-
-const unlink = promisify(fs.unlink);
-const writeFile = promisify(fs.writeFile);
 
 /*
  * Set the following compile time flag to true if the
@@ -69,21 +63,9 @@ class SentryConfigurationProvider implements DebugConfigurationProvider {
   }
 }
 
-async function createTempFile(contents: string): Promise<string> {
-  const random = Math.random()
-    .toString()
-    .substr(2);
-
-  const filePath = path.join(os.tmpdir(), `${random}.json`);
-  await writeFile(filePath, contents);
-  return filePath;
-}
-
 export async function startDebugging(event: Event): Promise<boolean> {
-  const tempFile = await createTempFile(JSON.stringify(event));
-
-  try {
-    return await debug.startDebugging(undefined, {
+  return withTempFile(JSON.stringify(event), tempFile =>
+    debug.startDebugging(undefined, {
       // Interface arguments
       name: 'View',
       request: 'launch',
@@ -92,10 +74,8 @@ export async function startDebugging(event: Event): Promise<boolean> {
       // Custom arguments
       event: tempFile,
       searchPaths: configuration.getSearchPaths(),
-    });
-  } finally {
-    await unlink(tempFile);
-  }
+    }),
+  );
 }
 
 export function configureDebugger(context: ExtensionContext): void {
