@@ -2,6 +2,7 @@ import { window } from 'vscode';
 import { CommandQuickPickItem } from '../pick';
 import { Issue } from '../sentry';
 import { SentryCommand } from './base';
+import { openInBrowser } from './openInBrowser';
 import { startDebugger } from './startDebugger';
 
 export const COMMAND_SHOW_ISSUE_ACTIONS = 'sentry.showIssueActions';
@@ -18,6 +19,9 @@ export class ShowIssueActionsCommand extends SentryCommand<ShowIssueActionsArgs>
   protected async run(args: ShowIssueActionsArgs): Promise<void> {
     const cmds = [
       CommandQuickPickItem.from({ label: 'Launch debugger on Issue' }, startDebugger, {
+        issue: args.issue,
+      }),
+      CommandQuickPickItem.from({ label: 'Open issue in browser' }, openInBrowser, {
         issue: args.issue,
       }),
     ];
