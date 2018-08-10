@@ -9,7 +9,7 @@ import {
   window,
   workspace,
 } from 'vscode';
-import { SentryContext, setContext } from './commands';
+import { SentryContext, setContext } from './commands/builtin';
 import { COMMAND_SHOW_PROJECT_PICK } from './commands/showProjectPick';
 import { affectsSearchPaths, discoverSearchPaths } from './paths';
 

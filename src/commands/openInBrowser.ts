@@ -1,7 +1,7 @@
 import { window } from 'vscode';
-import { openUrl } from '../commands';
 import { Issue } from '../sentry';
 import { SentryCommand } from './base';
+import { openUrl } from './builtin';
 
 export const COMMAND_OPEN_IN_BROWSER = 'sentry.OpenInBrowser';
 
