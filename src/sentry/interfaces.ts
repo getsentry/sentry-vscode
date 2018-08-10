@@ -17,6 +17,7 @@ export interface Issue {
 
 export interface Event {
   eventID: string;
+  release?: { version: string };
   entries: EventEntry[];
 }
 

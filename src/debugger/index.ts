@@ -7,11 +7,12 @@ import {
   ExtensionContext,
   ProviderResult,
   window,
+  workspace,
   WorkspaceFolder,
 } from 'vscode';
 import { configuration } from '../config';
 import { Event } from '../sentry';
-import { withTempFile } from '../utils';
+import { exec, withTempFile } from '../utils';
 import { SentryDebugSession } from './server';
 
 /*
@@ -63,8 +64,11 @@ class SentryConfigurationProvider implements DebugConfigurationProvider {
   }
 }
 
-export async function startDebugging(event: Event): Promise<boolean> {
-  return withTempFile(JSON.stringify(event), tempFile =>
+export async function startDebugging(event: Event): Promise<void> {
+  if (!(await checkRevision(event))) {
+    return;
+  }
+  await withTempFile(JSON.stringify(event), tempFile =>
     debug.startDebugging(undefined, {
       // Interface arguments
       name: 'View',
@@ -82,4 +86,41 @@ export function configureDebugger(context: ExtensionContext): void {
   const provider = new SentryConfigurationProvider();
   context.subscriptions.push(debug.registerDebugConfigurationProvider('sentry', provider));
   context.subscriptions.push(provider);
+}
+
+async function checkRevision(event: Event): Promise<boolean> {
+  if (!event.release || !event.release.version) {
+    return true;
+  }
+
+  const version = event.release.version;
+  for (const folder of workspace.workspaceFolders || []) {
+    try {
+      const output = await exec('git', ['rev-parse', 'HEAD'], { cwd: folder.uri.fsPath });
+      if (output.startsWith(version)) {
+        return true;
+      }
+    } catch (e) {
+      continue;
+    }
+  }
+
+  const buttonClicked = await window.showWarningMessage(
+    getRevisionDescription(version),
+    'Continue Debugging',
+    'Cancel',
+  );
+
+  return buttonClicked === 'Continue Debugging';
+}
+
+function getRevisionDescription(version: string): string {
+  return (
+    `Mismatching revision: Event occurred at revision \`${version.substr(0, 7)} \`, ` +
+    `but none of your workplace folders seem to have that revision checked out. Make ` +
+    `sure the code checked out on your computer matches the code in production. For ` +
+    `example, go to your project folder and run: \`git checkout ${version}\`. You ` +
+    `might also have to reinstall dependencies for vscode-sentry to pick up the ` +
+    `correct files.`
+  );
 }

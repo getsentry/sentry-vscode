@@ -1,3 +1,4 @@
+import { execFile } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -22,4 +23,16 @@ export async function withTempFile<T>(
   } finally {
     await unlink(filePath);
   }
+}
+
+export function exec(file: string, args: string[], options: any): Promise<string> {
+  return new Promise((resolve, reject) => {
+    execFile(file, args, options, (error, stdout) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(stdout);
+      }
+    });
+  });
 }

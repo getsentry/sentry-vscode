@@ -1,7 +1,7 @@
-import { execFile } from 'child_process';
 import * as fs from 'fs';
 import * as promisify from 'util.promisify';
 import { ConfigurationChangeEvent, workspace } from 'vscode';
+import { exec } from './utils';
 
 const stat = promisify(fs.stat);
 
@@ -24,18 +24,6 @@ export async function filterAsync<T>(
   return array.filter((_, index) => verdicts[index]);
 }
 
-function exec(file: string, args: string[]): Promise<string> {
-  return new Promise((resolve, reject) => {
-    execFile(file, args, (error, stdout) => {
-      if (error) {
-        reject(error);
-      } else {
-        resolve(stdout);
-      }
-    });
-  });
-}
-
 async function isDirectory(path: string): Promise<boolean> {
   try {
     return (await stat(path)).isDirectory();
@@ -48,10 +36,11 @@ async function getPythonPaths(): Promise<string[]> {
   const pythonPath = workspace.getConfiguration('python').get<string>('pythonPath', 'python');
 
   try {
-    const json = await exec(pythonPath, [
-      '-c',
-      'import sys; import json; json.dump(sys.path, sys.stdout)',
-    ]);
+    const json = await exec(
+      pythonPath,
+      ['-c', 'import sys; import json; json.dump(sys.path, sys.stdout)'],
+      {},
+    );
 
     return filterAsync(JSON.parse(json), isDirectory);
   } catch (e) {
