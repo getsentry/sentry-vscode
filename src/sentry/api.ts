@@ -1,5 +1,5 @@
 import * as request from 'request-light';
-import Uri from 'vscode-uri';
+import { Uri } from 'vscode';
 import { configuration } from '../config';
 import { Event, Issue, Organization, Project } from './interfaces';
 import { getToken } from './rc';

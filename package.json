@@ -127,7 +127,6 @@
         "request-light": "^0.2.3",
         "util.promisify": "^1.0.0",
         "vscode-debugadapter": "1.27.0",
-        "vscode-debugprotocol": "1.27.0",
-        "vscode-uri": "^1.0.5"
+        "vscode-debugprotocol": "1.27.0"
     }
 }
