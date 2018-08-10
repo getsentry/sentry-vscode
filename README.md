@@ -15,6 +15,8 @@ VSCode.
 - Browse Sentry projects and issues from VSCode
 - Launch the debugger to navigate stack traces and see variables
 
+![screen shot 2018-08-10 at 19 38 27](https://user-images.githubusercontent.com/1433023/43972565-0d0b18d2-9cd5-11e8-88ef-7e5e82e14a5b.png)
+
 ## Requirements
 
 This extension requires a Sentry account. You can [sign up for free](https://sentry.io/signup/) and
