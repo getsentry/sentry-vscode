@@ -58,11 +58,6 @@
                 "command": "sentry.showIssueSearch",
                 "title": "Search Issues",
                 "category": "Sentry"
-            },
-            {
-                "command": "sentry.startDebugger",
-                "title": "Start Debugger",
-                "category": "Sentry"
             }
         ],
         "debuggers": [
@@ -77,10 +72,6 @@
             "commandPalette": [
                 {
                     "command": "sentry.showIssueSearch",
-                    "when": "sentry:enabled"
-                },
-                {
-                    "command": "sentry.startDebugger",
                     "when": "sentry:enabled"
                 }
             ]
