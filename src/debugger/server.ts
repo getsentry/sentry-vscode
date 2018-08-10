@@ -310,9 +310,19 @@ async function convertEventPathToLocalPath(
 
   while (segments.length > 0) {
     for (const prefix of searchPaths) {
-      const absPath = path.resolve(workspace.rootPath || '', prefix, ...segments);
-      if (await isFile(absPath)) {
-        return absPath;
+      if (path.isAbsolute(prefix)) {
+        const absPath = path.resolve(prefix, ...segments);
+        if (await isFile(absPath)) {
+          return absPath;
+        }
+      } else {
+        const folders = workspace.workspaceFolders || [];
+        for (const folder of folders) {
+          const absPath = path.resolve(folder.uri.fsPath, prefix, ...segments);
+          if (await isFile(absPath)) {
+            return absPath;
+          }
+        }
       }
     }
 
