@@ -23,7 +23,19 @@ This extension requires a Sentry account. You can [sign up for free](https://sen
 then follow the [quickstart guide](https://docs.sentry.io/quickstart/) to set up a project and
 integrate it into your software.
 
+## Installation
+
+For now:
+
+```
+npm install -g vsce
+vsce package
+code --install-extension *.vsix
+```
+
 ## Usage
+
+Install [sentry-cli](https://github.com/getsentry/sentry-cli) and set it up. The VSCode extension will pick up the authentication information from `sentry-cli`.
 
 Run the command _Sentry: Search Issues_ from the command palette (`CMD + Shift + P` or
 `Ctrl + Shift + P`) and enter a search term. You can also use all search filters that work on the
