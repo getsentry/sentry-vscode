@@ -3,6 +3,7 @@
     "displayName": "Sentry",
     "description": "Editor integration for sentry.io",
     "version": "0.0.1",
+    "repository": "https://github.com/getsentry/vscode-sentry",
     "publisher": "Sentry",
     "license": "MIT",
     "engines": {
