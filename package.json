@@ -80,25 +80,6 @@
                     "when": "sentry:enabled"
                 }
             ]
-        },
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "sentry",
-                    "title": "Sentry",
-                    "icon": "resources/sentry-glyph.svg",
-                    "when": "sentry:enabled"
-                }
-            ]
-        },
-        "views": {
-            "sentry": [
-                {
-                    "id": "sentry-issues",
-                    "name": "Issues",
-                    "when": "sentry:enabled"
-                }
-            ]
         }
     },
     "scripts": {
